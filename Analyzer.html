@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>EZ AUTO — Deal Analyzer</title>
+<style>
+  :root {
+    --orange:   #ff6736;
+    --orange-d: #e5521f;
+    --bg:       #ffffff;
+    --bg2:      #f5f6f8;
+    --bg3:      #eceef2;
+    --text1:    #0f1117;
+    --text2:    #52586a;
+    --text3:    #9aa0b0;
+    --border:   rgba(0,0,0,0.09);
+    --border2:  rgba(0,0,0,0.15);
+    --r:        12px;
+    --rsm:      8px;
+    /* semantic aliases used in existing JS */
+    --text:     #0f1117;
+    --muted:    #52586a;
+    --hint:     #9aa0b0;
+    --surface:  #ffffff;
+    --accent:   #ff6736;
+    --font:     -apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;
+    --mono:     "SF Mono","JetBrains Mono","Courier New",monospace;
+    --radius:   12px;
+    --radius-sm:8px;
+    --radius-xs:6px;
+    --shadow-sm:none;
+    --shadow:   none;
+    /* flag colors */
+    --green-bg:#eef8e8;--green-b:#4caf50;--green-t:#1b5e20;--green-d:#2e7d32;
+    --amber-bg:#fff8e6;--amber-b:#ff9800;--amber-t:#5f3f00;--amber-d:#e65100;
+    --red-bg:#fff0f0;--red-b:#f44336;--red-t:#7b1c1c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text1);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: #000000;
+    padding: 0 28px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+  .logo { font-size: 15px; font-weight: 600; color: #fff; letter-spacing: .02em; }
+  .logo span { color: var(--orange); }
+  .logo-sub { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 1px; }
+  .hdate { font-size: 11px; color: rgba(255,255,255,.3); font-family: var(--mono); }
+
+  /* ── TAB BAR ── */
+  .tab-bar {
+    display: flex;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border2);
+    padding: 0 24px;
+    position: sticky;
+    top: 64px;
+    z-index: 90;
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    padding: 14px 24px;
+    font-size: 15px;
+    border: none;
+    background: none;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -0.5px;
+    font-family: inherit;
+    transition: color .15s;
+    white-space: nowrap;
+    min-height: 48px;
+  }
+  .tab-btn:hover { color: var(--text1); }
+  .tab-btn.active { color: var(--text1); border-bottom-color: var(--orange); font-weight: 500; }
+  .tab-btn.locked { color: var(--text3); cursor: default; }
+  .tab-btn .tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    font-size: 10px; font-weight: 600; margin-left: 6px;
+    background: var(--bg2); color: var(--text2);
+  }
+  .tab-btn.active .tab-badge { background: var(--orange); color: #fff; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── PAGE ── */
+  .page { max-width: 1100px; margin: 0 auto; padding: 0 20px 80px; }
+  .tab-content { padding: 20px 0; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border-radius: var(--r);
+    padding: 18px 20px;
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  /* ── GRIDS ── */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .g4 { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+  .g5 { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 10px; }
+  .mb { margin-bottom: 10px; }
+
+  /* ── FORM INPUTS ── */
+  .fi { display: flex; flex-direction: column; gap: 4px; }
+  .fi label { font-size: 12px; font-weight: 500; color: var(--text2); }
+  .fi input, .fi select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--rsm);
+    background: var(--bg);
+    color: var(--text1);
+    font-size: 15px;
+    font-family: inherit;
+    transition: border-color .12s;
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+  }
+  .fi input:focus, .fi select:focus { border-color: var(--orange); }
+  .fi input[readonly] { background: var(--bg2); color: var(--text2); cursor: default; }
+  .hint { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+  .fixed-rate {
+    display: flex; align-items: center;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--rsm);
+    font-size: 15px; font-weight: 600;
+    color: var(--text2); font-family: var(--mono);
+  }
+
+  /* ── TAX PREVIEW ── */
+  .tax-preview { background: var(--bg3); border-radius: var(--rsm); padding: 10px 12px; margin-top: 10px; display: none; }
+  .tax-preview.on { display: block; }
+  .tax-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: var(--text2); }
+  .tax-row b { color: var(--text1); font-weight: 500; }
+  .tax-total { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--text1); padding: 7px 0 0; margin-top: 5px; border-top: 0.5px solid var(--border); }
+  .sec-div { height: 0.5px; background: var(--border); margin: 12px 0; }
+
+  /* ── STIP CHECKLIST ── */
+  .stip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stip-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 13px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--rsm);
+    cursor: pointer;
+    transition: background .12s;
+    user-select: none;
+    background: var(--bg);
+  }
+  .stip-item:hover { background: var(--bg2); }
+  .stip-item.checked { background: var(--green-bg); border-color: var(--green-b); }
+  .stip-item input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--orange); cursor: pointer; flex-shrink: 0; }
+  .stip-lbl { font-size: 13px; font-weight: 500; color: var(--text2); }
+  .stip-item.checked .stip-lbl { color: var(--green-t); }
+
+  /* ── BUTTONS ── */
+  .run-btn {
+    display: block; width: 100%;
+    padding: 18px;
+    background: var(--orange);
+    border: none;
+    border-radius: var(--r);
+    font-size: 17px; font-weight: 500;
+    color: #ffffff;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .1s;
+  }
+  .run-btn:active { background: var(--orange-d); }
+  .reset-btn {
+    display: block; width: 100%;
+    padding: 14px;
+    background: none;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--r);
+    font-size: 15px; color: var(--text2);
+    cursor: pointer; margin-top: 8px;
+    font-family: inherit;
+    transition: background .1s;
+  }
+  .reset-btn:active { background: var(--bg2); }
+
+  /* ── STIP PILLS ── */
+  .stip-status { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .stip-pill { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .stip-pill.ok { background: var(--green-bg); color: var(--green-t); }
+  .stip-pill.miss { background: var(--red-bg); color: var(--red-t); }
+  .pill-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .stip-pill.ok .pill-dot { background: var(--green-b); }
+  .stip-pill.miss .pill-dot { background: var(--red-b); }
+
+  /* ── VERDICT ── */
+  .verdict { border-radius: var(--r); padding: 20px; margin-bottom: 10px; }
+  .verdict.approve { background: var(--green-bg); }
+  .verdict.lean-approve { background: #edf7e6; }
+  .verdict.lean-deny { background: var(--amber-bg); }
+  .verdict.deny { background: var(--red-bg); }
+  .v-lbl { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .verdict.approve .v-lbl, .verdict.approve .v-rsn { color: var(--green-d); }
+  .verdict.lean-approve .v-lbl, .verdict.lean-approve .v-rsn { color: #2d6a0a; }
+  .verdict.lean-deny .v-lbl, .verdict.lean-deny .v-rsn { color: var(--amber-t); }
+  .verdict.deny .v-lbl, .verdict.deny .v-rsn { color: var(--red-t); }
+  .v-title { font-size: 26px; font-weight: 300; margin-bottom: 6px; letter-spacing: -0.5px; }
+  .verdict.approve .v-title { color: var(--green-t); }
+  .verdict.lean-approve .v-title { color: #2d6a0a; }
+  .verdict.lean-deny .v-title { color: var(--amber-t); }
+  .verdict.deny .v-title { color: var(--red-t); }
+  .v-rsn { font-size: 14px; line-height: 1.55; }
+  .min-dp-box { margin-top: 12px; padding: 12px 14px; background: rgba(0,0,0,.05); border-radius: var(--rsm); font-size: 13px; }
+  .min-dp-box b { font-size: 18px; }
+
+  /* ── METRIC CARDS ── */
+  .gap-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--green-bg); color: var(--green-d); font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: var(--rsm); margin-bottom: 12px; }
+  .met { background: var(--bg3); border-radius: var(--rsm); padding: 14px 16px; }
+  .met-lbl { font-size: 11px; letter-spacing: 1.5px; color: var(--text3); text-transform: uppercase; margin-bottom: 5px; }
+  .met-val { font-size: 22px; font-weight: 300; color: var(--text1); letter-spacing: -0.5px; }
+  .met-val.g { color: var(--green-d); }
+  .met-val.y { color: var(--amber-d); }
+  .met-val.r { color: var(--red-t); }
+  .met-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  /* ── RISK FLAGS ── */
+  .flags-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .flag { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: var(--rsm); font-size: 13px; font-weight: 500; }
+  .flag.green { background: var(--green-bg); color: var(--green-t); }
+  .flag.amber { background: var(--amber-bg); color: var(--amber-t); }
+  .flag.red { background: var(--red-bg); color: var(--red-t); }
+  .flag-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .flag.green .flag-dot { background: var(--green-b); }
+  .flag.amber .flag-dot { background: var(--amber-b); }
+  .flag.red .flag-dot { background: var(--red-b); }
+
+  /* ── BREAKEVEN ── */
+  .be-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .be-col-title { font-size: 11px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 0.5px solid var(--border); }
+  .be-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+  .be-row.last { border-bottom: none; }
+  .be-row.bold { font-weight: 600; }
+  .be-lbl { color: var(--text2); }
+  .be-val { font-weight: 500; color: var(--text1); font-family: var(--mono); font-size: 13px; }
+  .be-val.pos { color: var(--green-d); }
+  .be-result { background: var(--bg3); border-radius: var(--rsm); padding: 12px 14px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .be-result-lbl { font-size: 12px; color: var(--text2); font-weight: 500; }
+  .be-result-val { font-size: 20px; font-weight: 300; font-family: var(--mono); letter-spacing: -0.5px; }
+  .be-result-val.good { color: var(--green-d); }
+  .be-result-val.ok { color: var(--amber-d); }
+  .be-result-val.bad { color: var(--red-t); }
+  .foot-note { font-size: 11px; color: var(--text3); line-height: 1.7; border-top: 0.5px solid var(--border); padding-top: 10px; margin-top: 12px; }
+
+  /* ── TWO-COLUMN INPUT LAYOUT ── */
+  .input-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  .input-col { display: flex; flex-direction: column; gap: 0; }
+
+  /* ── FLOATING REFERENCE BUTTONS ── */
+  .ref-btns { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 6px; z-index: 200; }
+  .ref-btn {
+    padding: 10px 16px;
+    background: #000000;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,.2);
+    transition: opacity .12s;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 36px;
+  }
+  .ref-btn:active { opacity: .8; }
+  .ref-panel {
+    position: fixed; bottom: 72px; right: 20px;
+    width: min(580px,calc(100vw - 40px));
+    max-height: 72vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--r);
+    padding: 18px; z-index: 199; display: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,.12);
+  }
+  .ref-panel.on { display: block; }
+
+  /* iPad landscape (1024px) and narrow desktop */
+  @media(max-width:1100px){
+  }
+  /* iPad portrait (768px) and below */
+  @media(max-width:900px){
+    .input-cols { grid-template-columns: 1fr; }
+    .tab-btn { padding: 12px 16px; font-size: 14px; }
+    .g4 { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .g5 { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  }
+  /* Mobile (640px and below) */
+  @media(max-width:640px){
+    .g2,.g3,.g4,.g5,.be-grid,.flags-grid,.stip-grid { grid-template-columns: 1fr; }
+    .ref-btns { bottom: 14px; right: 14px; }
+    .page { padding: 0 14px 60px; }
+    .header { height: 56px; padding: 0 16px; }
+    .tab-bar { top: 56px; }
+    .tab-btn { padding: 10px 14px; font-size: 13px; min-height: 44px; }
+    .run-btn { font-size: 15px; padding: 16px; }
+  }
+  @media print {
+    *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .header,.tab-bar,.ref-btns,.run-btn,.reset-btn { display:none !important; }
+    .tab-pane { display:block !important; }
+    .card { break-inside:avoid; margin-bottom:8px; }
+    .be-grid { gap:10px; }
+    .g4,.g5 { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+    .flags-grid { grid-template-columns:1fr 1fr !important; }
+    .stip-grid { grid-template-columns:repeat(3,1fr) !important; }
+    .input-cols { grid-template-columns:1fr !important; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <img src="data:image/png;base64,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" alt="EZ AUTO" style="height:52px;width:auto;object-fit:contain;"/>
+  <div style="text-align:center">
+    <div class="logo" style="color:#fff;font-size:14px;letter-spacing:.06em">DEAL UNDERWRITING ANALYZER</div>
+    <div class="logo-sub">EZ AUTO — Internal Use Only</div>
+  </div>
+  <div style="text-align:right">
+    <div class="hdate" id="hdate"></div>
+  </div>
+</div>
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('input')" id="tab-input">
+    Deal input
+  </button>
+  <button class="tab-btn locked" onclick="showTab('analysis')" id="tab-analysis">
+    Analysis <span class="tab-badge" id="tab-analysis-badge">—</span>
+  </button>
+  <button class="tab-btn locked" onclick="showTab('compare')" id="tab-compare">
+    Compare
+  </button>
+</div>
+<div class="page">
+
+
+
+<!-- ── Tab 1: Deal input ── -->
+<div class="tab-pane active" id="pane-input">
+  <div class="tab-content">
+    <div class="input-cols">
+
+      <!-- LEFT COLUMN -->
+      <div class="input-col">
+<div class="card">
+    <div class="card-title">Customer profile</div>
+    <div class="g3 mb">
+      <div class="fi"><label>Customer name</label><input type="text" id="cn" placeholder="Full name"/></div>
+      <div class="fi"><label>Neo grade</label><select id="ng"><option value="">Select grade</option><option>A</option><option>B</option><option>C</option><option>D</option><option>F</option></select></div>
+      <div class="fi"><label>Credit score</label><input type="number" id="cs" placeholder="e.g. 586"/></div>
+    </div>
+    <div class="g2 mb">
+      <div class="fi">
+        <label>Time on job</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="position:relative">
+            <input type="number" id="jt-y" placeholder="Yrs" min="0" oninput="syncTime('jt')" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text)"/>
+            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--hint);pointer-events:none">yrs</span>
+          </div>
+          <div style="position:relative">
+            <input type="number" id="jt-m" placeholder="Mos" min="0" max="11" oninput="syncTime('jt')" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text)"/>
+            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--hint);pointer-events:none">mos</span>
+          </div>
+        </div>
+        <input type="hidden" id="jt" value="0"/>
+      </div>
+      <div class="fi">
+        <label>Time at residence</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="position:relative">
+            <input type="number" id="rt-y" placeholder="Yrs" min="0" oninput="syncTime('rt')" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text)"/>
+            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--hint);pointer-events:none">yrs</span>
+          </div>
+          <div style="position:relative">
+            <input type="number" id="rt-m" placeholder="Mos" min="0" max="11" oninput="syncTime('rt')" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text)"/>
+            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--hint);pointer-events:none">mos</span>
+          </div>
+        </div>
+        <input type="hidden" id="rt" value="0"/>
+      </div>
+    </div>
+    <div class="g2 mb">
+      <div class="fi"><label>Income type</label>
+        <select id="it">
+          <option value="">Select type</option>
+          <option value="w2h">W2 — Hourly</option>
+          <option value="w2s">W2 — Salary</option>
+          <option value="se">Self-employed</option>
+          <option value="gov">Government benefits (SSI/Disability)</option>
+        </select>
+      </div>
+    </div>
+    <div class="g3 mb">
+      <div class="fi"><label>Pay frequency</label>
+        <select id="pf" oninput="updatePayFreq()">
+          <option value="biweekly">Bi-weekly (every other Friday)</option>
+          <option value="weekly">Weekly</option>
+          <option value="semimonthly">Semi-monthly (twice a month)</option>
+          <option value="monthly">Monthly</option>
+        </select>
+        <span class="hint">Drives payment frequency, term label, and deferred DP eligibility</span>
+      </div>
+      <div class="fi"><label>Repossessions</label><input type="number" id="rp" value="0" min="0"/></div>
+      <div class="fi"><label>Open auto loans</label><input type="number" id="oa" value="0" min="0" oninput="toggleOA()"/></div>
+    </div>
+    <div class="g2 mb" id="oap-row" style="display:none">
+      <div class="fi" id="oap-fi"><label>Existing auto loan monthly payment ($)</label><input type="number" id="oap" placeholder="e.g. 320" oninput="calcLive()"/></div>
+    </div>
+    <div class="sec-div"></div>
+    <div class="g2">
+      <div class="fi"><label>Repeat customer?</label><select id="rc" oninput="toggleRepeat()"><option value="no">No — new customer</option><option value="yes">Yes — returning customer</option></select></div>
+      <div class="fi" id="rh-fi" style="display:none"><label>Prior payment history</label>
+        <select id="rh"><option value="good">Paid well — always on time</option><option value="occasional">Occasional issues — some late pays</option><option value="frequent">Frequent late pays</option><option value="repoed">Previously repoed with us</option></select>
+      </div>
+    </div>
+  </div>
+
+<div class="card" id="inc-calc-card">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Income calculator</span>
+      <button onclick="addIncomeSource()" style="font-size:12px;font-weight:600;font-family:var(--font);padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;">+ Add source</button>
+    </div>
+    <div id="income-sources"></div>
+    <div id="inc-calc-total" style="display:none;margin-top:14px;background:var(--bg);border-radius:8px;padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:500;margin-bottom:3px">Total monthly net income</div>
+          <div style="font-size:22px;font-weight:600;color:var(--text)" id="inc-calc-sum">—</div>
+          <div id="inc-calc-breakdown" style="display:none;font-size:11px;color:var(--muted);margin-top:3px"></div>
+        </div>
+        <div id="inc-calc-trend-display" style="font-size:13px;color:var(--muted)"></div>
+        <button onclick="populateIncome()" style="padding:9px 20px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;">Populate income fields ↗</button>
+      </div>
+    </div>
+  </div>
+
+<div class="card">
+    <div class="card-title">Income &amp; housing</div>
+    <div class="g2 mb">
+      <div class="fi"><label>Monthly net income ($)</label><input type="number" id="inc" placeholder="e.g. 2422" oninput="calcLive()"/></div>
+      <div class="fi"><label>Monthly housing expense ($)</label><input type="number" id="hs" placeholder="Rent or mortgage" oninput="calcLive()"/></div>
+    </div>
+    <div class="g3 mb">
+      <div class="fi"><label>PTI (%) — auto-calculated</label><input id="pti" readonly placeholder="Auto"/></div>
+      <div class="fi"><label>Residual income — auto-calculated</label><input id="ri" readonly placeholder="Auto"/><span class="hint">What's left after housing + all auto payments</span></div>
+      <div class="fi"><label>Income trend across paystubs</label>
+        <select id="itr">
+          <option value="">Select trend</option>
+          <option value="up">Stable or increasing</option>
+          <option value="slight">Slightly declining (under 15%)</option>
+          <option value="sig">Significantly declining (15%+)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="input-col">
+<div class="card">
+    <div class="card-title">Deal structure</div>
+    <div class="g3 mb">
+      <div class="fi"><label>Vehicle year</label><input type="number" id="vy" placeholder="e.g. 2008" oninput="calcLive()"/></div>
+      <div class="fi"><label>Make</label><input type="text" id="vm" placeholder="e.g. Honda"/></div>
+      <div class="fi"><label>Model</label><input type="text" id="vmo" placeholder="e.g. Accord"/></div>
+    </div>
+    <div class="g3 mb">
+      <div class="fi"><label>Mileage</label><input type="number" id="mi" placeholder="e.g. 114342"/></div>
+      <div class="fi"><label>Sale price ($)</label><input type="number" id="sp" placeholder="e.g. 12990" oninput="autoCalc()"/></div>
+      <div class="fi"><label>Down payment ($)</label><input type="number" id="dp" placeholder="e.g. 1600" oninput="autoCalc()"/></div>
+    </div>
+    <div class="g3 mb">
+      <div class="fi">
+        <label>Amount financed ($)</label>
+        <input type="number" id="af" placeholder="Auto-calculated" readonly style="background:var(--bg);color:var(--muted);cursor:default;font-weight:500"/>
+        <span class="hint">Calculated from sale price, fees &amp; down payment</span>
+      </div>
+      <div class="fi">
+        <label id="bw-label">Bi-weekly payment ($) <span id="bw-badge" style="display:none;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:4px;background:var(--green-bg);color:var(--green-t)">auto</span></label>
+        <input type="number" id="bw" placeholder="Enter or auto-calculates" oninput="onBwInput()" step="0.01"/>
+        <span class="hint" id="bw-hint"></span>
+      </div>
+      <div class="fi">
+        <label id="tm-label">Term (payments) <span id="tm-badge" style="display:none;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:4px;background:var(--green-bg);color:var(--green-t)">auto</span></label>
+        <input type="number" id="tm" placeholder="Enter or auto-calculates" oninput="onTmInput()"/>
+        <span class="hint" id="tm-hint"></span>
+      </div>
+    </div>
+    <div class="g3 mb">
+      <div class="fi"><label>Interest rate</label><div class="fixed-rate">25% APR — fixed</div></div>
+      <div class="fi"><label>Down payment coverage — auto-calculated</label><input id="dpm" readonly placeholder="Auto"/><span class="hint">Actual day-1 cash ÷ monthly payment</span></div>
+      <div class="fi" id="deferred-wrap" style="display:none">
+        <label>Deferred down payment ($) <span style="background:var(--amber-bg);color:var(--amber-t);font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:4px">Weekly only</span></label>
+        <input type="number" id="def-dp" placeholder="e.g. 400" oninput="calcLive()" min="0"/>
+        <span class="hint">Must be collected within 7 days · Cannot exceed one week's net pay</span>
+      </div>
+    </div>
+  </div>
+
+<div class="card">
+    <div class="card-title">Taxes</div>
+    <div class="g3">
+      <div class="fi"><label>State sales tax (%)</label><input type="number" id="state-tax" value="6" step="0.1" oninput="autoCalc()"/><span class="hint">Florida standard: 6%</span></div>
+      <div class="fi"><label>County surtax (%)</label><input type="number" id="county-tax" value="1" step="0.25" oninput="autoCalc()"/><span class="hint">Polk County: 1% — on first $5,000 only</span></div>
+      <div class="fi"><label>Doc stamp rate (per $100)</label><input type="number" id="ds-rate" value="0.35" step="0.01" oninput="autoCalc()"/><span class="hint">Florida: $0.35 per $100 of note</span></div>
+    </div>
+    <div class="tax-preview" id="tax-preview">
+      <div class="tax-row"><span>State sales tax</span><b id="tp-state">—</b></div>
+      <div class="tax-row"><span>County surtax (on first $5,000)</span><b id="tp-county">—</b></div>
+      <div class="tax-row"><span>Doc stamp (on amount financed)</span><b id="tp-doc">—</b></div>
+      <div class="tax-total"><span>Total taxes</span><span id="tp-total">—</span></div>
+    </div>
+  </div>
+
+<div class="card">
+    <div class="card-title">Cost of sale</div>
+    <div class="g3">
+      <div class="fi"><label>Vehicle all-in cost ($)</label><input type="number" id="vc" placeholder="e.g. 2582.62"/></div>
+      <div class="fi"><label>Sold by</label><select id="sb"><option value="">Select</option><option value="juan">Juan (remote)</option><option value="store">Store associate</option></select></div>
+      <div class="fi"><label>Tag type</label><select id="tt" oninput="autoCalc()"><option value="">Select</option><option value="transfer">Transfer</option><option value="new">New tag</option></select></div>
+    </div>
+  </div>
+
+<div class="card">
+    <div class="card-title">Stip checklist — reference only</div>
+    <div class="stip-grid">
+      <label class="stip-item" id="sw-dl"><input type="checkbox" id="s-dl" onchange="chkStip('sw-dl','s-dl')"/><span class="stip-lbl">FL Driver's License — active?</span></label>
+      <label class="stip-item" id="sw-poi"><input type="checkbox" id="s-poi" onchange="chkStip('sw-poi','s-poi')"/><span class="stip-lbl">Proof of income (last 4 paystubs)</span></label>
+      <label class="stip-item" id="sw-por"><input type="checkbox" id="s-por" onchange="chkStip('sw-por','s-por')"/><span class="stip-lbl">Proof of residence</span></label>
+      <label class="stip-item" id="sw-bs1"><input type="checkbox" id="s-bs1" onchange="chkStip('sw-bs1','s-bs1')"/><span class="stip-lbl">Most recent bank statement</span></label>
+      <label class="stip-item" id="sw-rent"><input type="checkbox" id="s-rent" onchange="chkStip('sw-rent','s-rent')"/><span class="stip-lbl">Rent / mortgage verification</span></label>
+      <label class="stip-item" id="sw-idi"><input type="checkbox" id="s-idi" onchange="chkStip('sw-idi','s-idi')"/><span class="stip-lbl">Run IDI</span></label>
+    </div>
+  </div>
+      </div>
+    </div>
+
+    <!-- Run button full width -->
+    <div style="margin-top:8px">
+      <button class="run-btn" onclick="runAnalysis()">Run Deal Analysis</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tab 2: Analysis ── -->
+<div class="tab-pane" id="pane-analysis">
+  <div class="tab-content">
+    <div id="stip-bar" class="stip-status"></div>
+    <div id="v-box" class="verdict"></div>
+    <div class="card" id="snap-card"></div>
+    <div class="card"><div class="card-title">Risk flags</div><div class="flags-grid" id="flags-grid"></div></div>
+    <div class="card" id="be-card"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="reset-btn" style="flex:1;background:var(--text);color:#fff;border-color:var(--text)" onclick="window.print()">Save as PDF / Print</button>
+      <button class="reset-btn" style="flex:1" onclick="showTab('input')">← Edit deal</button>
+      <button class="reset-btn" style="flex:1" onclick="showTab('compare')">Compare scenarios →</button>
+    </div>
+    <button class="reset-btn" style="margin-top:8px;width:100%" onclick="resetForm()">Clear &amp; start new deal</button>
+  </div>
+</div>
+
+<!-- ── Tab 3: Compare ── -->
+<div class="tab-pane" id="pane-compare">
+  <div class="tab-content">
+    <div class="card" id="compare-card" style="background:var(--bg)">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Compare a scenario</span>
+        <span style="font-size:11px;color:var(--hint);font-weight:400;text-transform:none;letter-spacing:0">Adjust the deal and see what has to give</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button id="mode-btn-1" onclick="setCmpMode(1)" style="flex:1;padding:9px;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .15s;background:var(--text);color:#fff;border:1px solid var(--text)">Fix the payment → calculate term</button>
+        <button id="mode-btn-2" onclick="setCmpMode(2)" style="flex:1;padding:9px;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .15s;background:transparent;color:var(--muted);border:1px solid var(--border)">Fix the term → calculate payment</button>
+      </div>
+      <div id="cmp-mode-desc" style="font-size:12px;color:var(--muted);background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:14px;line-height:1.6"></div>
+      <div class="g3 mb" id="cmp-inputs">
+        <div class="fi"><label>Down payment ($)</label><input type="number" id="c-dp" placeholder="e.g. 2000"/></div>
+        <div class="fi"><label>Sale price ($)</label><input type="number" id="c-sp" placeholder="e.g. 12990"/></div>
+        <div class="fi" id="c-fixed-wrap"><label id="c-fixed-label">Bi-weekly payment ($)</label><input type="number" id="c-fixed" placeholder=""/></div>
+      </div>
+      <div class="fi mb" id="c-term-wrap" style="display:none">
+        <label id="c-term-label">Term (bi-weekly payments) — from your system</label>
+        <input type="number" id="c-term" placeholder="e.g. 78"/>
+        <span class="hint">Enter the term your system produces for this adjusted deal</span>
+      </div>
+      <button onclick="runComparison()" style="width:100%;padding:11px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;">Run comparison ↗</button>
+    </div>
+    <div id="cmp-results" style="display:none"></div>
+    <button class="reset-btn" style="width:100%;margin-top:8px" onclick="showTab('analysis')">← Back to analysis</button>
+  </div>
+</div>
+
+<!-- ── Floating reference buttons ── -->
+<div class="ref-btns" id="ref-btns">
+  <button id="ref-btn-legend" class="ref-btn" style="display:none" onclick="toggleRef('ref-legend')" ontouchstart="toggleRef('ref-legend')">Logic guide</button>
+  <button id="ref-btn-cheat" class="ref-btn" onclick="toggleRef('ref-cheat')" ontouchstart="toggleRef('ref-cheat')">Term cheat sheet</button>
+</div>
+
+<!-- ── Reference panels ── -->
+<div class="ref-panel" id="ref-cheat">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:600">Term cheat sheet &nbsp;<span style="color:var(--hint);font-weight:400;font-size:12px">SE-M &harr; BI-W &harr; MO &harr; YR</span></div>
+    <button onclick="toggleRef('ref-cheat')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">&times;</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:center">
+      <thead><tr>
+        <th style="padding:8px 16px;background:#f0e8d8;border:1px solid var(--border);font-weight:600;font-size:12px;letter-spacing:.05em">SEMI-MONTHLY</th>
+        <th style="padding:8px 16px;background:#f0f0d8;border:1px solid var(--border);font-weight:600;font-size:12px"></th>
+        <th style="padding:8px 16px;background:#f0f0d8;border:1px solid var(--border);font-weight:600;font-size:12px;letter-spacing:.05em">BI-WEEKLY</th>
+        <th style="padding:8px 16px;background:#dce8f0;border:1px solid var(--border);font-weight:600;font-size:12px"></th>
+        <th style="padding:8px 16px;background:#dce8f0;border:1px solid var(--border);font-weight:600;font-size:12px;letter-spacing:.05em">MONTHLY</th>
+        <th style="padding:8px 16px;background:#dff0e0;border:1px solid var(--border);font-weight:600;font-size:12px"></th>
+        <th style="padding:8px 16px;background:#dff0e0;border:1px solid var(--border);font-weight:600;font-size:12px;letter-spacing:.05em">YEARS</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:10px 16px;background:#fdf6ee;border:1px solid var(--border);font-weight:600;font-size:16px">96</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#fdfde8;border:1px solid var(--border);font-weight:600;font-size:16px">104</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#eaf4fb;border:1px solid var(--border);font-weight:600;font-size:16px">48</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#edfaee;border:1px solid var(--border);font-weight:600;font-size:16px">4</td></tr>
+        <tr><td style="padding:10px 16px;background:#fdf6ee;border:1px solid var(--border);font-weight:600;font-size:16px">84</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#fdfde8;border:1px solid var(--border);font-weight:600;font-size:16px">91</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#eaf4fb;border:1px solid var(--border);font-weight:600;font-size:16px">42</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#edfaee;border:1px solid var(--border);font-weight:600;font-size:16px">3.5</td></tr>
+        <tr><td style="padding:10px 16px;background:#fdf6ee;border:1px solid var(--border);font-weight:600;font-size:16px">72</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#fdfde8;border:1px solid var(--border);font-weight:600;font-size:16px">78</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#eaf4fb;border:1px solid var(--border);font-weight:600;font-size:16px">36</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#edfaee;border:1px solid var(--border);font-weight:600;font-size:16px">3</td></tr>
+        <tr><td style="padding:10px 16px;background:#fdf6ee;border:1px solid var(--border);font-weight:600;font-size:16px">60</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#fdfde8;border:1px solid var(--border);font-weight:600;font-size:16px">65</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#eaf4fb;border:1px solid var(--border);font-weight:600;font-size:16px">30</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#edfaee;border:1px solid var(--border);font-weight:600;font-size:16px">2.5</td></tr>
+        <tr><td style="padding:10px 16px;background:#fdf6ee;border:1px solid var(--border);font-weight:600;font-size:16px">48</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#fdfde8;border:1px solid var(--border);font-weight:600;font-size:16px">52</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#eaf4fb;border:1px solid var(--border);font-weight:600;font-size:16px">24</td><td style="padding:10px 8px;border:none;color:var(--hint)">=</td><td style="padding:10px 16px;background:#edfaee;border:1px solid var(--border);font-weight:600;font-size:16px">2</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="font-size:11px;color:var(--hint);margin-top:10px;line-height:1.6">SE-M = Semi-monthly &nbsp;&middot;&nbsp; BI-W = Bi-weekly &nbsp;&middot;&nbsp; MO = Monthly &nbsp;&middot;&nbsp; YR = Years</div>
+</div>
+
+<div class="ref-panel" id="ref-legend">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:600">Approval logic guide</div>
+    <button onclick="toggleRef('ref-legend')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">&times;</button>
+  </div>
+  
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Verdict logic</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:var(--red-bg);border-radius:8px;font-size:13px;color:var(--red-t)"><span style="font-weight:600;min-width:110px;flex-shrink:0">DENY</span><span>3+ red flags &nbsp;&middot;&nbsp; OR previously repoed with EZ AUTO &nbsp;&middot;&nbsp; OR PTI over 30% &nbsp;&middot;&nbsp; OR significantly declining income + 2 red flags. No restructuring possible.</span></div>
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:#fff3e8;border:1px solid #d4720a;border-radius:8px;font-size:13px;color:#7a3a00"><span style="font-weight:600;min-width:110px;flex-shrink:0">LEAN DENY<br/>customer risk</span><span>2+ red flags &nbsp;&middot;&nbsp; OR 1 red + breakeven over 12 months &nbsp;&middot;&nbsp; OR 4+ ambers + breakeven over 11 months. The customer profile itself is the problem. Restructuring the deal alone won't fix it.</span></div>
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:#fff3e8;border:1px solid #d4720a;border-radius:8px;font-size:13px;color:#7a3a00"><span style="font-weight:600;min-width:110px;flex-shrink:0">LEAN DENY<br/>structure only</span><span>Customer profile is solid (0 reds, ≤2 ambers) but breakeven exceeds the ceiling for this profile. Tool shows the minimum down payment to bring the deal into range. A $450–$500 bump often fixes it.</span></div>
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:#f0fae8;border:1px solid #7ab840;border-radius:8px;font-size:13px;color:#2d5a08"><span style="font-weight:600;min-width:110px;flex-shrink:0">LEAN APPROVE</span><span>Minor flags or borderline breakeven but economics protect you. Strong DP coverage noted when present. Sign it and monitor.</span></div>
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:var(--green-bg);border-radius:8px;font-size:13px;color:var(--green-t)"><span style="font-weight:600;min-width:110px;flex-shrink:0">APPROVE</span><span>0 red flags &nbsp;&middot;&nbsp; 2 or fewer amber flags &nbsp;&middot;&nbsp; Breakeven under 10 months &nbsp;&middot;&nbsp; PTI under 20% &nbsp;&middot;&nbsp; Residual income $800+/mo. Strong deal.</span></div>
+        </div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Dynamic breakeven ceiling</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+          <div style="padding:10px 14px;background:var(--green-bg);border-radius:8px;color:var(--green-t)"><b>0 reds, ≤2 ambers</b> — ceiling raises to <b>16 months</b>. Strong customer earns more runway.</div>
+          <div style="padding:10px 14px;background:var(--amber-bg);border-radius:8px;color:var(--amber-t)"><b>0 reds, 3–4 ambers</b> — ceiling stays at <b>14 months</b>. Standard threshold.</div>
+          <div style="padding:10px 14px;background:var(--red-bg);border-radius:8px;color:var(--red-t)"><b>1 red flag</b> — ceiling drops to <b>12 months</b>. Higher risk needs faster recovery.</div>
+          <div style="padding:10px 14px;background:var(--red-bg);border-radius:8px;color:var(--red-t)"><b>2+ red flags</b> — Lean Deny on flags alone. Breakeven is irrelevant.</div>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="padding:10px;background:var(--green-bg);border-radius:8px;font-size:13px;color:var(--green-t)"><b>Green</b><br/>10 months or less</div>
+          <div style="padding:10px;background:var(--amber-bg);border-radius:8px;font-size:13px;color:var(--amber-t)"><b>Amber</b><br/>11–16 months (profile-dependent)</div>
+          <div style="padding:10px;background:var(--red-bg);border-radius:8px;font-size:13px;color:var(--red-t)"><b>Red</b><br/>Over ceiling for that profile</div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Flag thresholds</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500">Factor</th>
+            <th style="text-align:left;padding:6px 8px;color:var(--green-d);font-weight:500">Green</th>
+            <th style="text-align:left;padding:6px 8px;color:var(--amber-d);font-weight:500">Amber</th>
+            <th style="text-align:left;padding:6px 8px;color:var(--red-t);font-weight:500">Red</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">PTI</td><td style="padding:7px 8px;color:var(--green-d)">Under 20%</td><td style="padding:7px 8px;color:var(--amber-d)">20% – 25%</td><td style="padding:7px 8px;color:var(--red-t)">Over 25%</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">Residual income</td><td style="padding:7px 8px;color:var(--green-d)">$800+/mo</td><td style="padding:7px 8px;color:var(--amber-d)">$500 – $799/mo</td><td style="padding:7px 8px;color:var(--red-t)">Under $500/mo</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">DP coverage (months)</td><td style="padding:7px 8px;color:var(--green-d)">3+ months</td><td style="padding:7px 8px;color:var(--amber-d)">2 – 2.9 months</td><td style="padding:7px 8px;color:var(--red-t)">Under 2 months</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">Job stability</td><td style="padding:7px 8px;color:var(--green-d)">12+ months on job</td><td style="padding:7px 8px;color:var(--amber-d)">6 – 11 months on job</td><td style="padding:7px 8px;color:var(--red-t)">Under 6 months on job</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">Residence stability</td><td style="padding:7px 8px;color:var(--green-d)">6+ months at residence</td><td style="padding:7px 8px;color:var(--amber-d)">3 – 5 months at residence</td><td style="padding:7px 8px;color:var(--red-t)">Under 3 months at residence</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">Stability combined</td><td style="padding:7px 8px;color:var(--green-d)">Both thresholds met</td><td style="padding:7px 8px;color:var(--amber-d)">One threshold borderline</td><td style="padding:7px 8px;color:var(--red-t)">Either under minimum (job &lt;6mo or residence &lt;3mo)</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">Repossessions</td><td style="padding:7px 8px;color:var(--green-d)">0 – 1</td><td style="padding:7px 8px;color:var(--amber-d)">2</td><td style="padding:7px 8px;color:var(--red-t)">3 or more</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">Income type</td><td style="padding:7px 8px;color:var(--green-d)">W2 salary, hourly, or gov benefits</td><td style="padding:7px 8px;color:var(--amber-d)">Self-employed</td><td style="padding:7px 8px;color:var(--red-t)">—</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">Income trend</td><td style="padding:7px 8px;color:var(--green-d)">Stable or increasing</td><td style="padding:7px 8px;color:var(--amber-d)">Slightly declining (&lt;15%)</td><td style="padding:7px 8px;color:var(--red-t)">Significantly declining (15%+)</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 8px;font-weight:500">Repeat customer</td><td style="padding:7px 8px;color:var(--green-d)">Paid well</td><td style="padding:7px 8px;color:var(--amber-d)">Occasional issues</td><td style="padding:7px 8px;color:var(--red-t)">Frequent late pays — or repoed with EZ AUTO = hard Deny</td></tr>
+            <tr><td style="padding:7px 8px;font-weight:500">Deferred DP</td><td style="padding:7px 8px;color:var(--green-d)">Within one week net pay (weekly customers only)</td><td style="padding:7px 8px;color:var(--amber-d)">Deferred + first pmt &gt; two weeks net pay</td><td style="padding:7px 8px;color:var(--red-t)">Exceeds one week net pay — or non-weekly customer</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:12px 14px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--hint);line-height:1.8">
+        <b style="color:var(--muted)">How each metric is calculated:</b><br/>
+        <b style="color:var(--muted)">PTI</b> = (payment × periods per year ÷ 12 + existing auto loan payment) ÷ monthly net income &nbsp;&middot;&nbsp; Adjusts automatically for bi-weekly, semi-monthly, and monthly pay frequencies<br/>
+        <b style="color:var(--muted)">Residual income</b> = monthly net income &minus; housing expense &minus; our monthly payment equivalent &minus; existing auto loan payment<br/>
+        <b style="color:var(--muted)">DP coverage</b> = actual day-1 cash (down payment minus any deferred amount) ÷ monthly payment equivalent<br/>
+        <b style="color:var(--muted)">Stability (green)</b> = 12+ months on job AND 6+ months at residence &nbsp;&middot;&nbsp; Amber = 6–11 months on job OR 3–5 months at residence &nbsp;&middot;&nbsp; Red = under 6 months on job OR under 3 months at residence<br/>
+        <b style="color:var(--muted)">Breakeven</b> = (total dealer cash out &minus; actual day-1 cash) ÷ payment, converted to months<br/>
+        <b style="color:var(--muted)">Payment auto-calc</b> = round(amortized(AF, term, 25% APR)) &nbsp;&middot;&nbsp; Formula verified against NeoVerify across 9 quotes<br/>
+        <b style="color:var(--muted)">State tax base</b> = sale price + service fee ($699) &nbsp;&middot;&nbsp; Doc stamp on final AF at $0.35 per $100<br/>
+        Neo grade and credit score: informational only &nbsp;&middot;&nbsp; Government benefits = green (fixed income) &nbsp;&middot;&nbsp; 0–1 repos = green (common in BHPH) &nbsp;&middot;&nbsp; Deferred DP: weekly customers only, must be collected within 7 days &nbsp;&middot;&nbsp; Previously repoed with EZ AUTO = hard Deny &nbsp;&middot;&nbsp; Approve requires: 0 reds, ≤2 ambers, breakeven ≤10 months, PTI &lt;20%, residual ≥$800/mo &nbsp;&middot;&nbsp; Breakeven ceiling is dynamic: 16 months for strong profiles (0 reds, ≤2 ambers), 14 months for moderate profiles (0 reds, 3–4 ambers), 12 months when 1 red flag present &nbsp;&middot;&nbsp; DP coverage of 3+ months is a positive modifier and explicitly noted in Lean Approve reasoning
+      </div>
+    </div>
+</div>
+
+
+</div>
+
+<script>
+const TITLE=75,EFILING=99,TEMP_TAG=5,SVC_FEE=699,WARRANTY=1000,GAP_REV=700,GAP_COST=300;
+const REG={transfer:75,new:325};
+const CY=2026;
+
+// Pay frequency config: weekly/biweekly both produce bi-weekly payments
+const PF={
+  weekly:      {periods:26, moPer:12/26, pmtLbl:'Bi-weekly payment ($)', tmLbl:'Term (bi-weekly payments)', tmPlh:'e.g. 78',  bwPlh:'e.g. 130'},
+  biweekly:    {periods:26, moPer:12/26, pmtLbl:'Bi-weekly payment ($)', tmLbl:'Term (bi-weekly payments)', tmPlh:'e.g. 78',  bwPlh:'e.g. 254'},
+  semimonthly: {periods:24, moPer:0.5,   pmtLbl:'Semi-monthly payment ($)', tmLbl:'Term (semi-monthly payments)', tmPlh:'e.g. 72', bwPlh:'e.g. 275'},
+  monthly:     {periods:12, moPer:1,     pmtLbl:'Monthly payment ($)',    tmLbl:'Term (monthly payments)',    tmPlh:'e.g. 36', bwPlh:'e.g. 559'},
+};
+function pfg(){return PF[sv('pf')]||PF.biweekly;}
+document.getElementById('hdate').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+// Initialize comparison mode
+setTimeout(()=>{setCmpMode(1);updatePayFreq();addIncomeSource('Job 1');showTab('input');},0);
+const $=id=>document.getElementById(id);
+const fv=id=>parseFloat($(id).value)||0;
+const iv=id=>parseInt($(id).value)||0;
+const sv=id=>$(id).value||'';
+const fmt=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtI=n=>Math.round(n).toLocaleString('en-US');
+
+function taxes(sp){
+  // Florida: taxable base = sale price + service fee
+  const taxBase=sp+SVC_FEE;
+  const state=taxBase*(fv('state-tax')/100);
+  const county=Math.min(taxBase,5000)*(fv('county-tax')/100);
+  return{state,county,taxBase};
+}
+function calcDocStamp(preDoCaf){
+  // Doc stamp is calculated on final AF (including itself) — iterate once to converge
+  const rate=fv('ds-rate');
+  const d1=Math.ceil(preDoCaf/100)*rate;
+  return Math.ceil((preDoCaf+d1)/100)*rate;
+}
+function showTax(sp,af){
+  if(!sp){$('tax-preview').classList.remove('on');return;}
+  const t=taxes(sp);
+  // Calculate AF to show doc stamp
+  const reg=REG[sv('tt')]||0;
+  const preDOC=sp+SVC_FEE+t.state+t.county+TITLE+reg+EFILING+TEMP_TAG+GAP_REV-(fv('dp')||0);
+  const doc=calcDocStamp(preDOC);
+  $('tp-state').textContent=fmt(t.state);
+  $('tp-county').textContent=fmt(t.county);
+  $('tp-doc').textContent=fmt(doc);
+  $('tp-total').textContent=fmt(t.state+t.county+doc);
+  $('tax-preview').classList.add('on');
+}
+function autoCalc(){
+  const sp=fv('sp'),dp=fv('dp'),tt=sv('tt'),reg=tt?REG[tt]:0;
+  if(sp&&dp){
+    const t=taxes(sp);
+    const preDOC=sp+SVC_FEE+t.state+t.county+TITLE+reg+EFILING+TEMP_TAG+GAP_REV-dp;
+    const doc=calcDocStamp(preDOC);
+    $('af').value=(preDOC+doc).toFixed(2);
+  }
+  recalcFromAF();
+  calcLive();
+}function calcLive(){
+  const inc=fv('inc'),bw=fv('bw'),oap=fv('oap'),hs=fv('hs'),dp=fv('dp'),defDp=fv('def-dp');
+  const p=pfg();
+  const monthly=bw*p.periods/12; // monthly equivalent: payment × periods per year ÷ 12
+  const day1=Math.max(0,dp-defDp);
+  if(inc&&bw){const ptiVal=(monthly+oap)/inc*100;
+    $('pti').value=ptiVal.toFixed(1)+'%';
+    $('pti').style.color=ptiVal<20?'var(--green-d)':ptiVal<=25?'var(--amber-d)':'var(--red-t)';}
+  if(inc&&bw){
+    const r=inc-hs-monthly-oap;
+    $('ri').value=fmt(r);
+    $('ri').style.color=r<500?'var(--red-t)':r<800?'var(--amber-d)':'var(--green-d)';
+  }
+  if(day1&&monthly){
+    const dpm=day1/monthly;
+    $('dpm').value=dpm.toFixed(1)+' months';
+    $('dpm').style.color=dpm>=3?'var(--green-d)':dpm>=2?'var(--amber-d)':'var(--red-t)';
+  }
+  showTax(fv('sp'),fv('af'));
+}
+function syncTime(id){
+  const y=parseFloat(document.getElementById(id+'-y').value)||0;
+  const m=parseFloat(document.getElementById(id+'-m').value)||0;
+  document.getElementById(id).value=(y*12+m).toString();
+}
+// ── Tri-directional deal calculator ──
+// Tracks which field was last manually entered by user
+// 'bw' = payment is fixed, term calculates
+// 'tm' = term is fixed, payment calculates
+// 'none' = neither entered yet
+let dealInputMode = 'none';
+
+function neoPayment(af, term, periods){
+  // NeoVerify formula confirmed across 9 quotes:
+  // Payment = round(amortized(AF, term, 25% APR))
+  if(!af||!term||term<=0)return 0;
+  const r = 0.25 / periods;
+  const n = term;
+  const exact = af * r * Math.pow(1+r,n) / (Math.pow(1+r,n) - 1);
+  return Math.round(exact * 100) / 100; // round to cents first
+}
+
+function neoTerm(af, bw, periods){
+  // Reverse: given AF and payment, calculate term
+  if(!af||!bw||bw<=0)return 0;
+  const r = 0.25 / periods;
+  // n = -ln(1 - AF*r/bw) / ln(1+r)
+  const inside = 1 - (af * r / bw);
+  if(inside <= 0) return 999; // payment too low
+  return Math.ceil(-Math.log(inside) / Math.log(1+r));
+}
+
+function onBwInput(){
+  // User manually entered payment — term becomes the calculated field
+  const bw = fv('bw');
+  const af = fv('af');
+  const p = pfg();
+  if(bw > 0 && af > 0){
+    dealInputMode = 'bw';
+    const term = neoTerm(af, bw, p.periods);
+    if(term > 0 && term < 999){
+      $('tm').value = term;
+      showDealBadge('tm','auto — from payment');
+      showDealBadge('bw','');
+    }
+  }
+  calcLive();
+}
+
+function onTmInput(){
+  // User manually entered term — payment becomes the calculated field
+  const tm = iv('tm');
+  const af = fv('af');
+  const p = pfg();
+  if(tm > 0 && af > 0){
+    dealInputMode = 'tm';
+    const bw = neoPayment(af, tm, p.periods);
+    if(bw > 0){
+      $('bw').value = bw.toFixed(2);
+      showDealBadge('bw','auto — from term');
+      showDealBadge('tm','');
+    }
+  }
+  calcLive();
+}
+
+function showDealBadge(field, text){
+  const badge = $(field + '-badge');
+  const hint = $(field + '-hint');
+  if(!badge) return;
+  if(text){
+    badge.textContent = text;
+    badge.style.display = 'inline-block';
+    if(hint) hint.textContent = '';
+  } else {
+    badge.style.display = 'none';
+    if(hint) hint.textContent = '';
+  }
+}
+
+function recalcFromAF(){
+  // Called when AF changes (sp, dp, tt changed)
+  // Re-derive whichever field is currently in auto mode
+  const af = fv('af');
+  const p = pfg();
+  if(!af) return;
+  if(dealInputMode === 'tm'){
+    const tm = iv('tm');
+    if(tm > 0){
+      const bw = neoPayment(af, tm, p.periods);
+      $('bw').value = bw.toFixed(2);
+      showDealBadge('bw','auto — from term');
+    }
+  } else if(dealInputMode === 'bw'){
+    const bw = fv('bw');
+    if(bw > 0){
+      const term = neoTerm(af, bw, p.periods);
+      if(term > 0 && term < 999){
+        $('tm').value = term;
+        showDealBadge('tm','auto — from payment');
+      }
+    }
+  }
+}
+
+function toggleOA(){
+  const oa=iv('oa');
+  $('oap-row').style.display=oa>0?'grid':'none';
+  if(!oa)$('oap').value='';
+  calcLive();
+}
+function updatePayFreq(){
+  const p=pfg();
+  $('bw-label').textContent=p.pmtLbl;
+  $('tm-label').textContent=p.tmLbl;
+  $('tm').placeholder=p.tmPlh;
+  $('bw').placeholder=p.bwPlh;
+  // Show deferred DP only for weekly pay
+  $('deferred-wrap').style.display=sv('pf')==='weekly'?'flex':'none';
+  if(sv('pf')!=='weekly'){$('def-dp').value='';}
+  // Update comparison mode labels
+  if(typeof setCmpMode==='function') setCmpMode(cmpMode);
+  recalcFromAF();
+  calcLive();
+}
+function toggleRepeat(){$('rh-fi').style.display=sv('rc')==='yes'?'flex':'none';}
+function chkStip(wid,cid){$(wid).classList.toggle('checked',$(cid).checked);}
+
+function mf(sev,txt){return`<div class="flag ${sev==='r'?'red':sev==='a'?'amber':'green'}" data-sev="${sev}"><div class="flag-dot"></div><span>${txt}</span></div>`;}
+
+// ── Updated flag functions with tightened thresholds ──
+function fPTI(p){
+  if(p<20)return mf('g',`PTI ${p.toFixed(1)}% — comfortable`);
+  if(p<=25)return mf('a',`PTI ${p.toFixed(1)}% — borderline, monitor closely`);
+  return mf('r',`PTI ${p.toFixed(1)}% — above 25% ceiling`);
+}
+function fRI(r){
+  if(r>=800)return mf('g',`Residual income ${fmt(r)}/mo — healthy cushion`);
+  if(r>=500)return mf('a',`Residual income ${fmt(r)}/mo — limited cushion`);
+  return mf('r',`Residual income ${fmt(r)}/mo — very tight, high default risk`);
+}
+function fDPM(dpm){
+  if(dpm>=3)return mf('g',`Down payment covers ${dpm.toFixed(1)} months of payments — strong skin in the game`);
+  if(dpm>=2)return mf('a',`Down payment covers ${dpm.toFixed(1)} months of payments — limited commitment`);
+  return mf('r',`Down payment covers only ${dpm.toFixed(1)} months of payments — very low, easy to walk away`);
+}
+function fStability(jt,rt){
+  const jOk=jt>=12,rOk=rt>=6,jWarn=jt>=6,rWarn=rt>=3;
+  if(jOk&&rOk)return mf('g',`Stability: ${jt} months on job / ${rt} months at residence — both stable`);
+  if(!jWarn||!rWarn)return mf('r',`Stability: ${jt} months on job / ${rt} months at residence — serious flag`);
+  return mf('a',`Stability: ${jt} months on job / ${rt} months at residence — one or both needs monitoring`);
+}
+function fRepo(r){
+  if(r<=1)return mf('g',`${r===0?'No repossessions':'1 repossession — acceptable in BHPH'}`);
+  if(r===2)return mf('a',`2 repossessions — review history carefully`);
+  return mf('r',`${r} repossessions — high risk`);
+}
+function fIT(it){
+  if(it==='w2s')return mf('g','W2 salary — stable, predictable income');
+  if(it==='w2h')return mf('g','W2 hourly — verifiable, hours may vary');
+  if(it==='gov')return mf('g','Government benefits — fixed, reliable income');
+  if(it==='se')return mf('a','Self-employed — verify carefully, variable income');
+  return null;
+}
+function fITR(itr){
+  if(itr==='up')return mf('g','Income trend: stable or increasing across paystubs');
+  if(itr==='slight')return mf('a','Income trend: slightly declining — hours may be getting cut');
+  if(itr==='sig')return mf('r','Income trend: significantly declining — stated income may not hold');
+  return null;
+}
+function fRC(rc,rh){
+  if(rc!=='yes')return null;
+  if(rh==='good')return mf('g','Repeat customer — strong prior payment history');
+  if(rh==='occasional')return mf('a','Repeat customer — occasional late pays on prior account');
+  if(rh==='frequent')return mf('r','Repeat customer — frequent late pays on prior account');
+  return mf('r','Repeat customer — previously repoed with EZ AUTO');
+}
+function fDeferred(defDp,inc,bw,p){
+  if(!defDp||defDp<=0)return null;
+  const weeklyNet=inc*12/52;
+  if(defDp>weeklyNet)return mf('r',`Deferred ${fmt(defDp)} exceeds one week net pay ${fmt(weeklyNet)} — not collectible in 7 days`);
+  if(defDp+bw>weeklyNet*2)return mf('a',`Deferred ${fmt(defDp)} + first payment may strain week-2 cash flow — monitor`);
+  return mf('g',`Deferred ${fmt(defDp)} within one week net pay ${fmt(weeklyNet)} — collectible in 7 days`);
+}
+function beColor(m){if(m<=10)return'good';if(m<=14)return'ok';return'bad';}
+
+// ── Minimum down payment calculator for Lean Deny ──
+function calcMinDP(costNo,bw,targetMo,p){
+  // How many payments fit in targetMo months?
+  const targetPmts=targetMo/p.moPer;
+  const collectedFromPmts=targetPmts*bw;
+  const minDP=costNo-collectedFromPmts;
+  return Math.max(0,Math.ceil(minDP/50)*50); // round up to nearest $50
+}
+
+// ── 4-outcome verdict engine ──
+function verdict(flags,reds,yels,bMoNo,ptiN,riIsGreen,repoedWithUs,costNo,bw,p){
+  // ── HARD DENY — no restructuring possible ──
+  if(repoedWithUs)return{cls:'deny',ttl:'Deny',rsn:'Customer was previously repoed with EZ AUTO. This is a hard denial regardless of deal structure.',minDP:null};
+  if(reds>=3)return{cls:'deny',ttl:'Deny',rsn:'Three or more high-risk flags. Deal does not meet minimum underwriting criteria.',minDP:null};
+  if(ptiN>30)return{cls:'deny',ttl:'Deny',rsn:'PTI exceeds 30% — mathematically unsustainable. No restructuring can fix this without a fundamentally different income situation.',minDP:null};
+  const sigDecline=flags.some(f=>f.includes('significantly declining'));
+  if(sigDecline&&reds>=2)return{cls:'deny',ttl:'Deny',rsn:'Significantly declining income combined with multiple high-risk flags. Income may not hold through the loan.',minDP:null};
+
+  // ── DYNAMIC BREAKEVEN CEILING based on customer risk profile ──
+  // 2+ reds → hard flag, Lean Deny on flags alone regardless of breakeven
+  // 1 red → ceiling drops to 12 months
+  // 0 reds, 3–4 ambers → ceiling stays at 14 months
+  // 0 reds, ≤2 ambers → ceiling raises to 16 months (strong customer)
+  let beCeiling;
+  if(reds>=2){beCeiling=0;} // doesn't matter, Lean Deny on flags alone
+  else if(reds===1){beCeiling=12;}
+  else if(yels>=3){beCeiling=14;}
+  else{beCeiling=16;} // 0 reds, ≤2 ambers — strong customer
+
+  // ── LEAN DENY — two flavors: customer risk vs structure only ──
+  const flagsAreProblem=reds>=2||(reds===1&&bMoNo>12)||(yels>=4&&bMoNo>11);
+  const structureIsProblem=bMoNo>beCeiling;
+  if(flagsAreProblem||structureIsProblem){
+    if(flagsAreProblem&&!structureIsProblem){
+      // Customer flags are the issue, not the economics
+      return{cls:'lean-deny',ttl:'Lean Deny — customer risk',
+        rsn:'Risk flags on this customer profile do not meet minimum underwriting criteria. The deal structure is acceptable but the customer profile needs to improve before approval.',
+        minDP:null};
+    }
+    // Structure is the issue (may also have flag issues)
+    const targetMo=reds>=1?12:beCeiling===14?14:14; // target is always the ceiling for that profile
+    const minDP=calcMinDP(costNo,bw,targetMo,p);
+    const dpStr=minDP>0?fmt(minDP):'current down payment';
+    const customerNote=reds===0&&yels<=2?' The customer profile is solid — this is a structure-only issue.':'';
+    return{cls:'lean-deny',ttl:reds===0&&yels<=2?'Lean Deny — structure only':'Lean Deny — restructure required',
+      rsn:`Deal economics do not protect you at the current structure.${customerNote} Minimum down payment to reach acceptable breakeven: <b class="min-dp-box">${dpStr}</b>`,
+      minDP};
+  }
+
+  // ── DP COVERAGE CUSHION NOTE ──
+  // Used in Lean Approve messaging when breakeven is borderline
+  const dpCoversWell=flags.some(f=>f.includes('strong skin in the game'));
+  const borderline=bMoNo>10&&bMoNo<=beCeiling;
+
+  // ── APPROVE — strong profile + strong economics ──
+  const isApprove=reds===0&&yels<=2&&bMoNo<=10&&ptiN<20&&riIsGreen;
+  if(isApprove)return{cls:'approve',ttl:'Approve',rsn:'Strong profile and strong economics. Green light — sign it.',minDP:null};
+
+  // ── LEAN APPROVE — acceptable profile, economics protect you ──
+  let larsn='Deal economics protect you even in a worst-case default scenario. Profile has minor flags but breakeven is within target. Sign it and monitor.';
+  if(borderline&&dpCoversWell)larsn='Breakeven is within range for this customer profile and DP coverage provides a meaningful cushion — customer has real skin in the game. Sign it and monitor.';
+  return{cls:'lean-approve',ttl:'Lean Approve',rsn:larsn,minDP:null};
+}
+function beCol(label,comm,cost,rem,bePmts,beMo,t,reg,doc,day1,defDpAmt){
+  const p=pfg();
+  const str=bePmts<=0?'Recovered at signing':`${Math.ceil(bePmts)} pmts &nbsp;&middot;&nbsp; ~${beMo.toFixed(1)} months`;
+  const dp=fv('dp'),vc=fv('vc'),sp=fv('sp');
+  return`<div>
+  <div class="be-col-title">${label}</div>
+  <div class="be-row"><span class="be-lbl">Vehicle (all-in w/ GPS)</span><span class="be-val">${fmt(vc)}</span></div>
+  <div class="be-row"><span class="be-lbl">Warranty (reinsurance)</span><span class="be-val">${fmt(WARRANTY)}</span></div>
+  <div class="be-row"><span class="be-lbl">Commission</span><span class="be-val">${fmt(comm)}</span></div>
+  <div class="be-row"><span class="be-lbl">State tax (${fv('state-tax')}% on SP + svc fee)</span><span class="be-val">${fmt(t.state)}</span></div>
+  <div class="be-row"><span class="be-lbl">County surtax (first $5,000)</span><span class="be-val">${fmt(t.county)}</span></div>
+  <div class="be-row"><span class="be-lbl">Doc stamp (on AF)</span><span class="be-val">${fmt(doc)}</span></div>
+  <div class="be-row"><span class="be-lbl">Title + reg + e-filing + temp tag</span><span class="be-val">${fmt(TITLE+reg+EFILING+TEMP_TAG)}</span></div>
+  <div class="be-row"><span class="be-lbl">Service fee (dealer revenue)</span><span class="be-val pos">- ${fmt(SVC_FEE)}</span></div>
+  <div class="be-row"><span class="be-lbl">GAP reinsurance cost</span><span class="be-val">${fmt(GAP_COST)}</span></div>
+  <div class="be-row"><span class="be-lbl">GAP revenue (always on deal)</span><span class="be-val pos">- ${fmt(GAP_REV)}</span></div>
+  <div class="be-row bold"><span class="be-lbl">Total cash out</span><span class="be-val">${fmt(cost)}</span></div>
+  <div class="be-row"><span class="be-lbl">Down payment (day 1)</span><span class="be-val pos">- ${fmt(day1)}</span></div>
+  ${defDpAmt>0?`<div class="be-row"><span class="be-lbl">Deferred (due in 7 days)</span><span class="be-val" style="color:var(--amber-d)">- ${fmt(defDpAmt)} pending</span></div>`:''}
+  <div class="be-row bold last"><span class="be-lbl">Remaining to recover</span><span class="be-val">${fmt(Math.max(0,rem))}</span></div>
+  <div class="be-result"><span class="be-result-lbl">Breakeven</span><span class="be-result-val ${beColor(beMo)}">${str}</span></div>
+  </div>`;
+}
+
+function runAnalysis(){
+  try{
+  const name=sv('cn')||'Customer',grade=sv('ng'),cs=sv('cs');
+  const jt=fv('jt'),rt=fv('rt'),repos=iv('rp'),oa=iv('oa'),oap=fv('oap');
+  const it=sv('it'),itr=sv('itr'),rc=sv('rc'),rh=sv('rh');
+  const vy=parseInt(sv('vy'))||0,vm=sv('vm'),vmo=sv('vmo'),mi=iv('mi');
+  const sp=fv('sp'),dp=fv('dp'),af=fv('af');
+  const bw=fv('bw'),tm=iv('tm');
+  const inc=fv('inc'),hs=fv('hs');
+  const vc=fv('vc'),sb=sv('sb'),tt=sv('tt');
+
+  const reg=tt?REG[tt]:0;
+  const t=taxes(sp);
+  const doc=calcDocStamp(sp+SVC_FEE+t.state+t.county+TITLE+reg+EFILING+TEMP_TAG+GAP_REV-dp);
+  const cNo=sb==='juan'?50:150,cWith=sb==='juan'?100:200;
+  const passThroughFees=t.state+t.county+doc+TITLE+reg+EFILING+TEMP_TAG+GAP_COST;
+  const dealerOffsets=SVC_FEE+GAP_REV;
+  const baseCost=vc+WARRANTY+passThroughFees-dealerOffsets;
+  const costNo=baseCost+cNo,costWith=baseCost+cWith;
+  // Use actual day-1 cash for breakeven (accounts for deferred DP)
+  const defDp=fv('def-dp');
+  const day1Cash=Math.max(0,dp-defDp);
+  const remNo=Math.max(0,costNo-day1Cash),remWith=Math.max(0,costWith-day1Cash);
+  const p=pfg();
+  const bPmtsNo=bw>0?remNo/bw:0,bMoNo=bPmtsNo*p.moPer;
+  const bPmtsWith=bw>0?remWith/bw:0,bMoWith=bPmtsWith*p.moPer;
+  const termMo=tm*p.moPer;
+
+  const monthly=bw*p.periods/12; // monthly equivalent: payment × periods per year ÷ 12
+  const ptiN=monthly>0&&inc>0?(monthly+oap)/inc*100:0;
+  const ri=inc-hs-monthly-oap;
+  const dpPct=sp>0?dp/sp*100:0;
+  const dpm=monthly>0?day1Cash/monthly:0; // DP coverage uses actual day-1 cash
+  const totalColl=dp+(bw*tm);
+  const profitFull=totalColl-costNo;
+  const agePayoff=vy>0?(CY+(termMo/12))-vy:0;
+
+  const dl=$('s-dl').checked,poi=$('s-poi').checked,por=$('s-por').checked;
+  function pill(lbl,ok){return`<div class="stip-pill ${ok?'ok':'miss'}"><div class="pill-dot"></div>${lbl}</div>`;}
+  const bs1=$('s-bs1').checked,rent=$('s-rent').checked,idi=$('s-idi').checked;
+  $('stip-bar').innerHTML=pill('FL DL active',dl)+pill('Proof of income',poi)+pill('Proof of residence',por)+pill('Bank statement',bs1)+pill('Rent verified',rent)+pill('IDI run',idi);
+
+  let flagsHTML='',reds=0,yels=0,repoedWithUs=false;
+  const allFlagTexts=[];
+  function add(h){
+    if(!h)return;
+    flagsHTML+=h;
+    allFlagTexts.push(h);
+    if(h.includes('data-sev="r"'))reds++;
+    else if(h.includes('data-sev="a"'))yels++;
+    if(h.includes('previously repoed with EZ AUTO'))repoedWithUs=true;
+  }
+
+  add(fPTI(ptiN));
+  if(inc&&hs&&bw)add(fRI(ri));
+  if(dpm>0)add(fDPM(dpm));
+  add(fStability(jt,rt));
+  add(fRepo(repos));
+  if(it)add(fIT(it));
+  if(itr)add(fITR(itr));
+  add(fRC(rc,rh));
+  if(oa>0)flagsHTML+=mf('a',`${oa} open auto loan(s) — payment included in PTI`);
+  if(defDp>0&&sv('pf')==='weekly')add(fDeferred(defDp,inc,bw,p));
+  if(defDp>0&&sv('pf')!=='weekly')flagsHTML+=mf('r','Deferred down payment — only eligible for weekly-paid customers');
+
+  const riIsGreen=ri>=800;
+  const v=verdict(allFlagTexts,reds,yels,bMoNo,ptiN,riIsGreen,repoedWithUs,costNo,bw,p);
+  const vehStr=`${vy||''} ${vm} ${vmo}`.trim()||'Vehicle';
+  const profCls=profitFull>5000?'g':profitFull>2000?'y':'r';
+  const riCls=ri>=800?'g':ri>=500?'y':'r';
+  const dpCls=dpm>=3?'g':dpm>=2?'y':'r'; // DP coverage drives color now
+  const dpmCls=dpm>=3?'g':dpm>=2?'y':'r';
+
+  $('v-box').className=`verdict ${v.cls}`;
+  const minDPNote=v.minDP&&v.minDP>0?`<div class="min-dp-box" style="margin-top:12px;padding:12px 16px;background:rgba(0,0,0,.07);border-radius:8px;font-size:13px;font-weight:500">Minimum down payment required: <span style="font-size:20px;font-weight:700">${fmt(v.minDP)}</span> &nbsp;&middot;&nbsp; Customer currently bringing ${fmt(day1Cash)} &nbsp;&middot;&nbsp; Short by ${fmt(Math.max(0,v.minDP-day1Cash))}</div>`:'' ;
+  $('v-box').innerHTML=`<div class="v-lbl">Recommendation</div><div class="v-title">${v.ttl}</div><div class="v-rsn">${v.rsn}</div>${minDPNote}`;
+
+  $('snap-card').innerHTML=`
+    <div class="card-title">${name}${vehStr?' &nbsp;&middot;&nbsp; '+vehStr:''}${mi?' &nbsp;&middot;&nbsp; '+fmtI(mi)+' mi':''}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <div class="gap-badge">GAP — always included &nbsp;/&nbsp; $${fmtN(GAP_REV)} revenue &nbsp;/&nbsp; $${fmtN(GAP_COST)} reinsurance &nbsp;/&nbsp; $${fmtN(GAP_REV-GAP_COST)} net benefit</div>
+      ${defDp>0?`<div style="background:var(--amber-bg);color:var(--amber-t);font-size:12px;font-weight:500;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:8px">Deferred: ${fmt(defDp)} &nbsp;&middot;&nbsp; Day-1 cash: ${fmt(day1Cash)} &nbsp;&middot;&nbsp; Due in 7 days</div>`:''}
+      ${grade?`<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:500;padding:6px 12px;border-radius:6px">NEO ${grade} &nbsp;·&nbsp; Score ${cs||'—'} &nbsp;·&nbsp; informational only</div>`:''}
+    </div>
+    <div class="g4 mb">
+      <div class="met"><div class="met-lbl">Down payment</div><div class="met-val ${dpCls}">${fmt(dp)}</div><div class="met-sub">${dpPct>0?dpPct.toFixed(1)+'% of sale price':''}</div></div>
+      <div class="met"><div class="met-lbl">Amount financed</div><div class="met-val">${fmt(af)}</div><div class="met-sub">25% APR &nbsp;·&nbsp; ~${Math.round(termMo)} mos</div></div>
+      <div class="met"><div class="met-lbl">${p.pmtLbl.replace(" ($)","")}</div><div class="met-val">${fmt(bw)}</div><div class="met-sub">${tm} payments</div></div>
+      <div class="met"><div class="met-lbl">Net monthly income</div><div class="met-val">$${fmtI(inc)}</div></div>
+    </div>
+    <div class="g4">
+      <div class="met"><div class="met-lbl">PTI</div><div class="met-val">${ptiN>0?ptiN.toFixed(1)+'%':'—'}</div>${oap>0?`<div class="met-sub">Incl. $${fmtN(oap)}/mo existing</div>`:''}</div>
+      <div class="met"><div class="met-lbl">Residual income</div><div class="met-val ${riCls}">${inc&&hs&&bw?fmt(ri):'—'}</div><div class="met-sub">After housing + auto</div></div>
+      <div class="met"><div class="met-lbl">DP coverage</div><div class="met-val ${dpmCls}">${dpm>0?dpm.toFixed(1)+' months':'—'}</div><div class="met-sub">Months of payment</div></div>
+      <div class="met"><div class="met-lbl">Profit at full term</div><div class="met-val ${profCls}">${bw&&tm&&vc?fmt(profitFull):'—'}</div><div class="met-sub">No-CPI scenario</div></div>
+    </div>`;
+
+  $('flags-grid').innerHTML=flagsHTML;
+
+  // ── Day 1 cash position ──
+  const saleCosts = t.state + t.county + doc + TITLE + reg + TEMP_TAG + cNo;
+  const day1Net = day1Cash - saleCosts;
+  const day1Pos = day1Net >= 0;
+  const day1Cls = day1Pos ? 'var(--green-d)' : 'var(--red-t)';
+  const day1Bg  = day1Pos ? 'var(--green-bg)' : 'var(--red-bg)';
+
+  $('be-card').innerHTML=`
+    <div class="card-title">Day 1 cash position — sale-triggered costs only</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Sale-triggered costs</div>
+        <div class="be-row"><span class="be-lbl">State sales tax</span><span class="be-val">${fmt(t.state)}</span></div>
+        <div class="be-row"><span class="be-lbl">County surtax</span><span class="be-val">${fmt(t.county)}</span></div>
+        <div class="be-row"><span class="be-lbl">Doc stamp</span><span class="be-val">${fmt(doc)}</span></div>
+        <div class="be-row"><span class="be-lbl">Title fee</span><span class="be-val">${fmt(TITLE)}</span></div>
+        <div class="be-row"><span class="be-lbl">Registration</span><span class="be-val">${fmt(reg)}</span></div>
+        <div class="be-row"><span class="be-lbl">Temp tag</span><span class="be-val">${fmt(TEMP_TAG)}</span></div>
+        <div class="be-row"><span class="be-lbl">Commission</span><span class="be-val">${fmt(cNo)}</span></div>
+        <div class="be-row bold"><span class="be-lbl">Total sale-triggered costs</span><span class="be-val">${fmt(saleCosts)}</span></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Day 1 position</div>
+        <div class="be-row"><span class="be-lbl">Down payment collected</span><span class="be-val">${fmt(day1Cash)}</span></div>
+        <div class="be-row"><span class="be-lbl">Sale-triggered costs</span><span class="be-val">- ${fmt(saleCosts)}</span></div>
+        <div style="margin-top:10px;padding:14px;background:${day1Bg};border-radius:8px;text-align:center">
+          <div style="font-size:11px;font-weight:600;color:${day1Cls};text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${day1Pos ? 'Day 1 Positive' : 'Day 1 Negative'}</div>
+          <div style="font-size:24px;font-weight:700;color:${day1Cls};font-family:var(--mono)">${day1Pos ? '+' : ''}${fmt(day1Net)}</div>
+          <div style="font-size:11px;color:${day1Cls};margin-top:4px">${day1Pos ? 'Down payment covers all sale costs' : 'Operating cash needed to fund the gap'}</div>
+        </div>
+        ${!day1Pos ? `<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5">Note: This is not the breakeven. Vehicle cost and recon are excluded here — this only measures whether the down payment covers the costs this sale creates.</div>` : ''}
+      </div>
+    </div>
+    <div class="card-title" style="margin-top:6px">Cash in deal — two scenarios based on CPI only</div>
+    <div class="be-grid">
+      ${beCol('Scenario A — no CPI',cNo,costNo,remNo,bPmtsNo,bMoNo,t,reg,doc,day1Cash,defDp)}
+      ${beCol('Scenario B — with CPI (+$50 commission)',cWith,costWith,remWith,bPmtsWith,bMoWith,t,reg,doc,day1Cash,defDp)}
+    </div>
+    <div class="foot-note">GAP always on every deal — $${fmtN(GAP_REV)} revenue / $${fmtN(GAP_COST)} reinsurance / $${fmtN(GAP_REV-GAP_COST)} net benefit &nbsp;&middot;&nbsp; CPI only affects commission (+$50) &nbsp;&middot;&nbsp; Interest rate fixed at 25% APR &nbsp;&middot;&nbsp; State tax calculated on sale price + service fee &nbsp;&middot;&nbsp; Doc stamp calculated on final amount financed &nbsp;&middot;&nbsp; Down payment is the only cash received on day 1</div>`;
+
+  unlockTabs();
+  // Update tab badge with verdict
+  const badge=document.getElementById('tab-analysis-badge');
+  if(badge){
+    const badgeMap={
+      'approve':{t:'✓',bg:'var(--green-b)'},
+      'lean-approve':{t:'✓',bg:'#5a9e2f'},
+      'lean-deny':{t:'!',bg:'#c46a00'},
+      'deny':{t:'✗',bg:'var(--red-b)'}
+    };
+    const bm=badgeMap[v.cls]||{t:'?',bg:'var(--muted)'};
+    badge.textContent=bm.t;badge.style.background=bm.bg;
+  }
+  showTab('analysis');
+  $('cmp-results').style.display='none';
+  $('c-dp').value=dp||'';
+  $('c-sp').value=sp||'';
+  $('c-fixed').value=bw||'';
+  $('c-term').value=tm||'';
+  // Update comparison mode labels after analysis in case frequency changed
+  setCmpMode(cmpMode);
+  // Tab switch handles navigation
+  }catch(err){
+    console.error('runAnalysis error:', err);
+    unlockTabs();
+    showTab('analysis');
+    $('v-box').className='verdict deny';
+    $('v-box').innerHTML=`<div class="v-lbl">Error</div><div class="v-title" style="font-size:16px">Analysis failed — see details below</div><div class="v-rsn" style="font-family:monospace;font-size:12px;white-space:pre-wrap">${err.message}\n\n${err.stack||''}</div>`;
+  }
+}
+
+let cmpMode=1;
+
+function setCmpMode(m){
+  cmpMode=m;
+  const b1=$('mode-btn-1'),b2=$('mode-btn-2');
+  const active='flex:1;padding:9px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .12s;background:var(--text);color:#fff;border:1px solid var(--text)';
+  const inactive='flex:1;padding:9px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .12s;background:transparent;color:var(--muted);border:1px solid var(--border)';
+  b1.style.cssText=m===1?active:inactive;
+  b2.style.cssText=m===2?active:inactive;
+  const p2=pfg();
+  if(m===1){
+    $('c-fixed-label').textContent=p2.pmtLbl+' — fixed';
+    $('c-fixed').placeholder=p2.bwPlh;
+    $('c-term-wrap').style.display='none';
+    $('cmp-mode-desc').innerHTML='<b>Mode 1:</b> The payment stays fixed. Change the down payment and/or sale price — the tool calculates how many payments are needed at that fixed payment.';
+  } else {
+    $('c-fixed-label').textContent=p2.pmtLbl+' — from your system';
+    $('c-fixed').placeholder=p2.bwPlh;
+    $('c-term-wrap').style.display='block';
+    $('cmp-mode-desc').innerHTML='<b>Mode 2:</b> Enter the adjusted down payment and sale price, then pull up the deal in your system to get the new payment and term. Enter both here and the comparison runs with correct numbers.';
+  }
+}
+
+function calcAF(sp,dp,tt_val){
+  const reg=tt_val?REG[tt_val]:0;
+  const t=taxes(sp);
+  const preDOC=sp+SVC_FEE+t.state+t.county+TITLE+reg+EFILING+TEMP_TAG+GAP_REV-dp;
+  const doc=calcDocStamp(preDOC);
+  return preDOC+doc;
+}
+
+// Approximate bi-weekly payment using simple interest formula
+function calcBW(af,termPmts){
+  if(termPmts<=0)return 0;
+  const rate=0.25/26; // 25% APR / 26 bi-weekly periods
+  if(rate===0)return af/termPmts;
+  return af*rate*Math.pow(1+rate,termPmts)/(Math.pow(1+rate,termPmts)-1);
+}
+
+// Approximate term given af and fixed payment
+function calcTerm(af,bw,periods){
+  if(bw<=0)return 0;
+  const rate=0.25/periods;
+  if(rate===0)return Math.ceil(af/bw);
+  const inside=1-(af*rate/bw);
+  if(inside<=0)return 999;
+  return Math.ceil(-Math.log(inside)/Math.log(1+rate));
+}
+
+function runComparison(){
+  const sb=sv('sb'),tt=sv('tt'),vc=fv('vc'),inc=fv('inc'),hs=fv('hs'),oap=fv('oap');
+  const jt=fv('jt'),rt=fv('rt'),repos=iv('rp'),it=sv('it'),itr=sv('itr'),rc=sv('rc'),rh=sv('rh');
+  const reg=tt?REG[tt]:0;
+  const cNo=sb==='juan'?50:150;
+
+  // Original deal
+  const aSP=fv('sp'),aDP=fv('dp'),aBW=fv('bw'),aTM=iv('tm');
+
+  // Adjusted deal inputs
+  const bSP=fv('c-sp')||aSP;
+  const bDP=fv('c-dp')||aDP;
+  const bFixed=fv('c-fixed');
+
+  // Mode 1: fixed payment, calculate term via amortization
+  // Mode 2: both payment and term entered directly from system
+  const bAF=calcAF(bSP,bDP,tt);
+  let bBW,bTM;
+  const cp=pfg();
+  if(cmpMode===1){
+    bBW=bFixed||aBW;
+    bTM=calcTerm(bAF,bBW,cp.periods);
+  } else {
+    bBW=bFixed||aBW;
+    bTM=Math.round(fv('c-term'))||aTM;
+  }
+
+  function calcScenario(sp,dp,bw,tm){
+    const af=calcAF(sp,dp,tt);
+    const t=taxes(sp);
+    const doc=calcDocStamp(sp+SVC_FEE+t.state+t.county+TITLE+reg+EFILING+TEMP_TAG+GAP_REV-dp);
+    const monthly=bw*cp.periods/12;
+    const pti=monthly>0&&inc>0?(monthly+oap)/inc*100:0;
+    const ri=inc-hs-monthly-oap;
+    const dpPct=sp>0?dp/sp*100:0;
+    const dpm=monthly>0?dp/monthly:0;
+    const termMo=tm*cp.moPer;
+    const passThroughFees=t.state+t.county+doc+TITLE+reg+EFILING+TEMP_TAG+GAP_COST;
+    const dealerOffsets=SVC_FEE+GAP_REV;
+    const baseCost=vc+WARRANTY+passThroughFees-dealerOffsets;
+    const costNo=baseCost+cNo;
+    const remNo=Math.max(0,costNo-dp);
+    const bePmtsNo=bw>0?remNo/bw:0;
+    const beMoNo=bePmtsNo*cp.moPer;
+    const totalColl=dp+(bw*tm);
+    const profitFull=totalColl-costNo;
+
+    let reds=0,yels=0,rwu=false;
+    const flagTxts=[];
+    function cf(h){if(!h)return;flagTxts.push(h);if(h.includes('data-sev="r"'))reds++;else if(h.includes('data-sev="a"'))yels++;if(h.includes('previously repoed'))rwu=true;}
+    cf(fPTI(pti));cf(fRI(ri));cf(fDPM(dpm));
+    cf(fStability(jt,rt));cf(fRepo(repos));
+    if(it)cf(fIT(it));if(itr)cf(fITR(itr));cf(fRC(rc,rh));
+    const riGreen=ri>=800;
+    const v=verdict(flagTxts,reds,yels,beMoNo,pti,riGreen,rwu,costNo,bw,cp);
+    const beStr=bePmtsNo<=0?'Recovered at signing':`${Math.ceil(bePmtsNo)} pmts &nbsp;&middot;&nbsp; ~${beMoNo.toFixed(1)} mos`;
+    return{sp,dp,bw,tm,af,pti,ri,dpPct,dpm,termMo,beMoNo,costNo,remNo,profitFull,v,beStr};
+  }
+
+  const A=calcScenario(aSP,aDP,aBW,aTM);
+  const B=calcScenario(bSP,bDP,bBW,bTM);
+
+  function vbadge(v){
+    const styles={
+      'approve':{bg:'var(--green-bg)',col:'var(--green-t)'},
+      'lean-approve':{bg:'var(--green-bg)',col:'#2d5a08'},
+      'lean-deny':{bg:'var(--amber-bg)',col:'#7a3a00'},
+      'deny':{bg:'var(--red-bg)',col:'var(--red-t)'}
+    };
+    const s=styles[v.cls]||styles.deny;
+    const minNote=v.minDP&&v.minDP>0?`<div style="font-size:11px;margin-top:4px;font-weight:500">Min DP: ${fmt(v.minDP)}</div>`:'';
+    return`<div style="padding:9px 12px;background:${s.bg};border-radius:8px;margin-bottom:10px"><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:${s.col}">Recommendation</div><div style="font-size:17px;font-weight:600;color:${s.col}">${v.ttl}</div>${minNote}</div>`;
+  }
+
+  function delta(aVal,bVal,lowerBetter=false){
+    const diff=bVal-aVal;
+    if(Math.abs(diff)<0.009)return`<span style="color:var(--hint);font-size:11px">—</span>`;
+    const better=lowerBetter?diff<0:diff>0;
+    const col=better?'var(--green-d)':'var(--red-t)';
+    const sign=diff>0?'+':'';
+    return`<span style="color:${col};font-size:11px;font-weight:700">${sign}${Math.abs(diff)<10?diff.toFixed(1):Math.round(diff)}</span>`;
+  }
+
+  function row(label,aVal,bVal,fmt_fn,lowerBetter=false,calcLabel=''){
+    const changed=Math.abs((bVal||0)-(aVal||0))>0.009;
+    const calcStyle=calcLabel?`style="background:var(--amber-bg);border-radius:4px;padding:1px 6px;font-size:10px;color:var(--amber-t);font-weight:600;display:inline-block;margin-left:4px"`:'';
+    return`<div style="display:grid;grid-template-columns:130px 1fr 1fr;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;align-items:center">
+      <span style="color:var(--muted);font-size:12px">${label}</span>
+      <span style="font-weight:500;font-family:var(--mono)">${fmt_fn(aVal)}</span>
+      <span style="font-weight:${changed?'600':'500'};font-family:var(--mono)">${fmt_fn(bVal)}${calcLabel?`<span ${calcStyle}>${calcLabel}</span>`:''} ${changed?delta(aVal,bVal,lowerBetter):''}</span>
+    </div>`;
+  }
+
+  function beBox(s,label){
+    const col=s.beMoNo<=10?'var(--green-d)':s.beMoNo<=14?'var(--amber-d)':'var(--red-t)';
+    return`<div style="background:var(--bg);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:var(--muted)">${label}</span>
+      <span style="font-size:15px;font-weight:700;font-family:var(--mono);color:${col}">${s.beStr}</span>
+    </div>`;
+  }
+
+  const modeNote=cmpMode===1
+    ?`Term calculated from fixed ${cp.pmtLbl.replace(' ($)','')} of ${fmt(bBW)}`
+    :`Payment and term entered from your system`;
+
+  $('cmp-results').innerHTML=`
+    <div class="card" style="border:1.5px solid var(--border)">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Side-by-side comparison</span>
+        <span style="font-size:11px;color:var(--hint);font-weight:400;text-transform:none;letter-spacing:0">${modeNote}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:130px 1fr 1fr;gap:8px;padding:0 0 10px;border-bottom:1px solid var(--border);margin-bottom:10px">
+        <div></div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Original deal</div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text)">Adjusted deal</div>
+      </div>
+      <div style="display:grid;grid-template-columns:130px 1fr 1fr;gap:8px;margin-bottom:12px;align-items:start">
+        <div></div>
+        <div>${vbadge(A.v)}</div>
+        <div>${vbadge(B.v)}</div>
+      </div>
+      ${row('Sale price',A.sp,B.sp,fmt,false)}
+      ${row('Down payment',A.dp,B.dp,fmt,false)}
+      ${row('Amt financed',A.af,B.af,fmt,true)}
+      ${cmpMode===1
+        ? row('Bi-wkly pmt',A.bw,B.bw,v=>fmt(v),false,'fixed')
+          + row('Term',A.tm,B.tm,v=>v+' pmts',true,'calculated')
+        : row('Bi-wkly pmt',A.bw,B.bw,v=>fmt(v),false,'entered')
+          + row('Term',A.tm,B.tm,v=>v+' pmts',true,'entered')
+      }
+      ${row('PTI',A.pti,B.pti,v=>v.toFixed(1)+'%',true)}
+      ${row('Residual inc',A.ri,B.ri,v=>fmt(v),false)}
+      ${row('DP coverage',A.dpm,B.dpm,v=>v.toFixed(1)+' mos',false)}
+      ${row('Profit / full term',A.profitFull,B.profitFull,v=>fmt(v),false)}
+      ${row('Total cash out',A.costNo,B.costNo,v=>fmt(v),true)}
+      ${row('Remaining',A.remNo,B.remNo,v=>fmt(v),true)}
+      <div style="display:grid;grid-template-columns:130px 1fr 1fr;gap:8px;margin-top:10px;align-items:center">
+        <div style="font-size:12px;font-weight:500;color:var(--muted)">Breakeven</div>
+        <div>${beBox(A,'Original')}</div>
+        <div>${beBox(B,'Adjusted')}</div>
+      </div>
+    </div>`;
+
+  $('cmp-results').style.display='block';
+  $('cmp-results').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── Tab system ──
+let analysisRun=false;
+
+function showTab(id){
+  if((id==='analysis'||id==='compare')&&!analysisRun)return;
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  const refBtns=document.getElementById('ref-btns');
+  const cheatBtn=document.getElementById('ref-btn-cheat');
+  const legendBtn=document.getElementById('ref-btn-legend');
+  if(refBtns)refBtns.style.display='flex';
+  if(id==='input'){
+    if(cheatBtn)cheatBtn.style.display='block';
+    if(legendBtn)legendBtn.style.display='none';
+  } else {
+    if(cheatBtn)cheatBtn.style.display='none';
+    if(legendBtn)legendBtn.style.display='block';
+  }
+  document.querySelectorAll('.ref-panel').forEach(p=>p.classList.remove('on'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function unlockTabs(){
+  analysisRun=true;
+  ['analysis','compare'].forEach(id=>{
+    const btn=document.getElementById('tab-'+id);
+    btn.classList.remove('locked');
+  });
+}
+
+function toggleRef(id){
+  const panel=document.getElementById(id);
+  const wasOpen=panel.classList.contains('on');
+  // Close all panels first
+  document.querySelectorAll('.ref-panel').forEach(p=>p.classList.remove('on'));
+  // Toggle the target panel
+  if(!wasOpen)panel.classList.add('on');
+}
+
+// Close ref panels on outside tap/click — use both for iOS compatibility
+function closeRefPanels(e){
+  if(!e.target.closest('.ref-panel')&&!e.target.closest('.ref-btn')){
+    document.querySelectorAll('.ref-panel').forEach(p=>p.classList.remove('on'));
+  }
+}
+document.addEventListener('click',closeRefPanels);
+document.addEventListener('touchend',function(e){
+  // Small delay so the button tap registers first
+  setTimeout(()=>closeRefPanels(e),50);
+},{passive:true});
+
+// ── Income Calculator ──
+let incSourceCount=0;
+
+const INC_PERIODS={weekly:52,biweekly:26,semimonthly:24,monthly:12};
+const INC_LABELS={weekly:'Weekly',biweekly:'Bi-weekly',semimonthly:'Semi-monthly',monthly:'Monthly'};
+const SOURCE_TYPES=['Job 1','Job 2','Co-signer','Other'];
+
+// ── Date back-calculation per frequency ──
+function prevPayDate(dateStr, freq){
+  const d=new Date(dateStr+'T00:00:00');
+  if(freq==='weekly'){d.setDate(d.getDate()-7);}
+  else if(freq==='biweekly'){d.setDate(d.getDate()-14);}
+  else if(freq==='semimonthly'){
+    const day=d.getDate();
+    // Semi-monthly pay days are typically 1st and 16th (or 15th and last)
+    // If current is on/after 16: previous was the 1st of same month
+    // If current is on the 1st: previous was the 16th of prior month
+    if(day>=16){d.setDate(1);}
+    else{d.setMonth(d.getMonth()-1);d.setDate(16);}
+  }
+  else if(freq==='monthly'){d.setMonth(d.getMonth()-1);}
+  return d.toISOString().slice(0,10);
+}
+
+function fmtDateDisplay(dateStr){
+  if(!dateStr)return '';
+  const [y,m,d]=dateStr.split('-');
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m)-1]} ${parseInt(d)}, ${y}`;
+}
+
+function fillPayDates(id){
+  const freq=document.getElementById(`inc-freq-${id}`).value;
+  const d1=document.getElementById(`inc-d1-${id}`).value;
+  if(!d1)return;
+  // d1 = most recent, calculate backwards
+  const d2=prevPayDate(d1,freq);
+  const d3=prevPayDate(d2,freq);
+  const d4=prevPayDate(d3,freq);
+  // Set hidden inputs and display labels
+  [[1,d1],[2,d2],[3,d3],[4,d4]].forEach(([r,d])=>{
+    const hidden=document.getElementById(`inc-d${r}-${id}`);
+    const lbl=document.getElementById(`inc-dlbl${r}-${id}`);
+    if(hidden)hidden.value=d;
+    if(lbl)lbl.textContent=fmtDateDisplay(d);
+  });
+  calcIncSource(id);
+}
+
+function addIncomeSource(type){
+  incSourceCount++;
+  const id=incSourceCount;
+  const label=type||SOURCE_TYPES[Math.min(id-1,SOURCE_TYPES.length-1)];
+  const wrap=document.createElement('div');
+  wrap.id=`inc-src-${id}`;
+  wrap.style.cssText='border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;background:var(--surface);box-shadow:var(--shadow-sm)';
+  wrap.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <select onchange="calcIncSource(${id})" id="inc-type-${id}" style="font-size:13px;font-weight:600;font-family:var(--font);padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)">
+          ${SOURCE_TYPES.map(t=>`<option value="${t}" ${t===label?'selected':''}>${t}</option>`).join('')}
+        </select>
+        <select onchange="updateFreqAndDates(${id})" id="inc-freq-${id}" style="font-size:13px;font-family:var(--font);padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)">
+          <option value="biweekly">Bi-weekly pay</option>
+          <option value="weekly">Weekly pay</option>
+          <option value="semimonthly">Semi-monthly pay</option>
+          <option value="monthly">Monthly pay</option>
+        </select>
+      </div>
+      <button onclick="removeIncSource(${id})" style="font-size:18px;line-height:1;background:none;border:none;cursor:pointer;color:var(--hint);padding:2px 6px">&times;</button>
+    </div>
+    <!-- Most recent date entry -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:var(--bg);border-radius:8px">
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Most recent pay date</div>
+        <input type="date" id="inc-d1-${id}" oninput="fillPayDates(${id})" onchange="fillPayDates(${id})"
+          style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text)"/>
+      </div>
+      <div style="font-size:12px;color:var(--hint);padding-top:18px">← enter this, others auto-fill</div>
+    </div>
+    <!-- Paystub rows -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);padding:0 2px">Pay date <span style="color:var(--hint);font-weight:400">(auto-filled)</span></div>
+      <div style="font-size:11px;font-weight:600;color:var(--muted);padding:0 2px">Net amount ($) <span style="color:var(--hint);font-weight:400">take-home</span></div>
+      ${[1,2,3,4].map(r=>`
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);min-height:35px" id="inc-dlbl${r}-${id}">—</div>
+        <input type="hidden" id="inc-d${r}-${id}"/>
+      </div>
+      <input type="number" id="inc-a${r}-${id}" onchange="calcIncSource(${id})" oninput="calcIncSource(${id})"
+        placeholder="${r===1?'Most recent':'Paystub '+r}" step="0.01" min="0"
+        style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text)"/>
+      `).join('')}
+    </div>
+    <div id="inc-result-${id}" style="display:none;background:var(--bg);border-radius:8px;padding:10px 14px;font-size:13px">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+        <div><span style="color:var(--muted)">Avg per check: </span><span id="inc-avg-${id}" style="font-weight:600"></span></div>
+        <div><span style="color:var(--muted)">Monthly equivalent: </span><span id="inc-mo-${id}" style="font-weight:600;color:var(--green-d)"></span></div>
+        <div id="inc-trend-${id}" style="font-size:12px;padding:3px 10px;border-radius:20px"></div>
+      </div>
+    </div>`;
+  document.getElementById('income-sources').appendChild(wrap);
+  updateIncTotal();
+}
+
+function updateFreqAndDates(id){
+  // When frequency changes, recalculate all dates from the most recent date
+  fillPayDates(id);
+}
+
+function removeIncSource(id){
+  const el=document.getElementById(`inc-src-${id}`);
+  if(el)el.remove();
+  updateIncTotal();
+}
+
+function calcIncSource(id){
+  const amounts=[1,2,3,4].map(r=>parseFloat(document.getElementById(`inc-a${r}-${id}`)?.value)||0).filter(v=>v>0);
+  if(amounts.length<2){document.getElementById(`inc-result-${id}`).style.display='none';updateIncTotal();return;}
+  const freq=document.getElementById(`inc-freq-${id}`).value;
+  const periods=INC_PERIODS[freq]||26;
+  const avg=amounts.reduce((a,b)=>a+b,0)/amounts.length;
+  const monthly=avg*periods/12;
+  // Trend: row 1 = most recent, row 4 = oldest
+  // Compare oldest half to newest half to detect direction
+  const half=Math.floor(amounts.length/2)||1;
+  const newestHalf=amounts.slice(0,half).reduce((a,b)=>a+b,0)/half; // rows 1-2
+  const oldestHalf=amounts.slice(-half).reduce((a,b)=>a+b,0)/half;  // rows 3-4
+  const pctChange=(newestHalf-oldestHalf)/oldestHalf*100; // positive = improving
+  let trendCls,trendTxt,trendVal;
+  if(pctChange>=-5){trendCls='background:var(--green-bg);color:var(--green-t)';trendTxt='Stable / increasing';trendVal='up';}
+  else if(pctChange>=-15){trendCls='background:var(--amber-bg);color:var(--amber-t)';trendTxt='Slightly declining';trendVal='slight';}
+  else{trendCls='background:var(--red-bg);color:var(--red-t)';trendTxt='Significantly declining';trendVal='sig';}
+  document.getElementById(`inc-avg-${id}`).textContent='$'+avg.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById(`inc-mo-${id}`).textContent='$'+monthly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'/mo';
+  const td=document.getElementById(`inc-trend-${id}`);
+  td.style.cssText=trendCls+';font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500';
+  td.textContent=trendTxt;
+  td.dataset.val=trendVal;
+  td.dataset.mo=monthly.toFixed(2);
+  document.getElementById(`inc-result-${id}`).style.display='block';
+  updateIncTotal();
+}
+
+function updateIncTotal(){
+  let total=0, worstTrend='up';
+  const order={up:0,slight:1,sig:2};
+  // Loop through all created source IDs explicitly
+  for(let i=1;i<=incSourceCount;i++){
+    const td=document.getElementById(`inc-trend-${i}`);
+    // Only count sources that are still in the DOM (not removed)
+    if(td&&document.getElementById(`inc-src-${i}`)){
+      const mo=parseFloat(td.dataset.mo)||0;
+      total+=mo;
+      const val=td.dataset.val;
+      if(val&&order[val]>order[worstTrend])worstTrend=val;
+    }
+  }
+  const totalEl=document.getElementById('inc-calc-total');
+  const sumEl=document.getElementById('inc-calc-sum');
+  const trendDisplay=document.getElementById('inc-calc-trend-display');
+  if(total>0){
+    totalEl.style.display='block';
+    // Show breakdown if more than one source
+    const sourceLines=[];
+    for(let i=1;i<=incSourceCount;i++){
+      const td=document.getElementById(`inc-trend-${i}`);
+      const src=document.getElementById(`inc-src-${i}`);
+      if(td&&src&&parseFloat(td.dataset.mo)>0){
+        const typeEl=document.getElementById(`inc-type-${i}`);
+        const lbl=typeEl?typeEl.value:`Source ${i}`;
+        sourceLines.push(`${lbl}: $${parseFloat(td.dataset.mo).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}/mo`);
+      }
+    }
+    sumEl.textContent='$'+total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'/mo';
+    sumEl.title=sourceLines.join(' + ');
+    // Show breakdown under total if multiple sources
+    const breakdownEl=document.getElementById('inc-calc-breakdown');
+    if(breakdownEl){
+      breakdownEl.textContent=sourceLines.length>1?sourceLines.join(' + '):'';
+      breakdownEl.style.display=sourceLines.length>1?'block':'none';
+    }
+    const trendMap={
+      up:{txt:'Overall trend: stable / increasing',cls:'color:var(--green-d)'},
+      slight:{txt:'Overall trend: slightly declining',cls:'color:var(--amber-d)'},
+      sig:{txt:'Overall trend: significantly declining',cls:'color:var(--red-t)'}
+    };
+    const tm=trendMap[worstTrend];
+    trendDisplay.style.cssText=tm.cls+';font-size:13px;font-weight:500';
+    trendDisplay.textContent=tm.txt;
+    trendDisplay.dataset.trend=worstTrend;
+    trendDisplay.dataset.total=total.toFixed(2);
+  } else {
+    totalEl.style.display='none';
+  }
+}
+
+function populateIncome(){
+  const trendDisplay=document.getElementById('inc-calc-trend-display');
+  const total=parseFloat(trendDisplay.dataset.total)||0;
+  const trend=trendDisplay.dataset.trend||'';
+  if(total>0){
+    document.getElementById('inc').value=total.toFixed(2);
+    if(trend){
+      const sel=document.getElementById('itr');
+      sel.value=trend;
+    }
+    calcLive();
+    // Scroll to income section
+    document.getElementById('inc').closest('.card').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
+
+function toggleCheatSheet(){
+  const p=$('cs-panel'),a=$('cs-arrow');
+  const open=p.style.display==='none';
+  p.style.display=open?'block':'none';
+  a.textContent=open?'−':'+';
+  $('cs-btn').style.borderRadius=open?'10px 10px 0 0':'10px';
+}
+function toggleLegend(){
+  const p=$('legend-panel'),a=$('legend-arrow');
+  const open=p.style.display==='none';
+  p.style.display=open?'block':'none';
+  a.textContent=open?'−':'+';
+  $('legend-btn').style.borderRadius=open?'10px 10px 0 0':'10px';
+}
+
+function resetForm(){
+  // Clear all text/number inputs
+  document.querySelectorAll('input[type=text],input[type=number]').forEach(i=>{
+    if(i.type!=='hidden')i.value=i.defaultValue||'';
+  });
+  // Clear year/month stability fields and their hidden totals
+  ['jt-y','jt-m','rt-y','rt-m'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const jtel=$('jt');if(jtel)jtel.value='0';
+  const rtel=$('rt');if(rtel)rtel.value='0';
+  // Reset all selects
+  document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);
+  // Uncheck all checkboxes and remove checked styling
+  document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('.stip-item').forEach(e=>e.classList.remove('checked'));
+  // Reset income calculator
+  document.getElementById('income-sources').innerHTML='';
+  document.getElementById('inc-calc-total').style.display='none';
+  incSourceCount=0;
+  addIncomeSource('Job 1');
+  // Reset specific fields to their default values
+  const rp=$('rp');if(rp)rp.value='0';
+  const oa=$('oa');if(oa)oa.value='0';
+  const st=$('state-tax');if(st)st.value='6';
+  const ct=$('county-tax');if(ct)ct.value='1';
+  const ds=$('ds-rate');if(ds)ds.value='0.35';
+  // Hide conditional rows
+  const oapRow=$('oap-row');if(oapRow)oapRow.style.display='none';
+  const rhFi=$('rh-fi');if(rhFi)rhFi.style.display='none';
+  const defWrap=$('deferred-wrap');if(defWrap)defWrap.style.display='none';
+  const defDp=$('def-dp');if(defDp)defDp.value='';
+  // Clear auto-calculated display fields
+  const pti=$('pti');if(pti){pti.value='';pti.style.color='';}
+  const ri=$('ri');if(ri){ri.value='';ri.style.color='';}
+  const dpm=$('dpm');if(dpm){dpm.value='';dpm.style.color='';}
+  const tp=$('tax-preview');if(tp)tp.classList.remove('on');
+  // Clear comparison fields
+  const cdp=$('c-dp');if(cdp)cdp.value='';
+  const csp=$('c-sp');if(csp)csp.value='';
+  const cfx=$('c-fixed');if(cfx)cfx.value='';
+  const ctm=$('c-term');if(ctm)ctm.value='';
+  const cmpRes=$('cmp-results');if(cmpRes)cmpRes.style.display='none';
+  // Reset pay frequency
+  const pf=$('pf');if(pf)pf.value='biweekly';
+  dealInputMode='none';
+  showDealBadge('bw','');showDealBadge('tm','');
+  updatePayFreq();
+  // Reset tabs — lock analysis and compare, go back to input
+  analysisRun=false;
+  ['analysis','compare'].forEach(id=>{
+    const btn=document.getElementById('tab-'+id);
+    if(btn)btn.classList.add('locked');
+  });
+  const badge=document.getElementById('tab-analysis-badge');
+  if(badge){badge.textContent='—';badge.style.background='var(--bg)';}
+  showTab('input');
+  setCmpMode(1);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+
+
+
+</body>
+</html>
